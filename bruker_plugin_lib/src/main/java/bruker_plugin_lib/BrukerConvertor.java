@@ -54,7 +54,7 @@ public static void main(String[] args) throws EOFException, IOException {
 	String ACQS_TYPE = (String) test_data_meta.get("acq_type");
 	Bruker bruker = new Bruker();
 	bruker.setPath(Paths.get("D:\\DATA SETs\\CSI\\Mouse\\28\\fid"));
-	bruker.setACQS_TYPE("CSI");
+//	bruker.setACQS_TYPE("CSI");
 	DataBruker data = bruker.getData();
 	
 	JcampdxData acqp = bruker.getJcampdx().getAcqp();

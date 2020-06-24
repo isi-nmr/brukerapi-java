@@ -103,7 +103,7 @@ public class Bruker {
 		jcampdx = new Jcampdx(path);
 	}
 	
-	public void ident_ACQS_TYPE() {
+	private void ident_ACQS_TYPE() {
 		Integer ACQ_dim =  jcampdx.getAcqp().getInt("ACQ_dim");
 		Integer NPro;
 		Integer NECHOES;
@@ -166,11 +166,13 @@ public class Bruker {
 		if (dir_rslt.contains("acqp") && dir_rslt.contains("method") && path.getFileName().toString().contains("fid")) {
 			JcampdxData acqp = jcampdx.getAcqp();
 			JcampdxData method = jcampdx.getMethod();
+			ident_ACQS_TYPE();
 			data = read_fid(acqp,method);
 		}
 		if (dir_rslt.contains("visu_pars") && dir_rslt.contains("reco") && path.getFileName().toString().contains("2dseq")) {
 			JcampdxData visu_pars = jcampdx.getVisu_pars();
 			JcampdxData reco = jcampdx.getReco();
+			ident_ACQS_TYPE();
 //			Object FG_TYPES = visu_pars.get("VisuFGOrderDesc");
 			data = read_2dseq(visu_pars, reco);
 		}

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logFile.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+
+            <fileNamePattern>logFile.%d{yyyy-MM-dd_HH-mm, UTC}.log</fileNamePattern>
+
+
+            <maxHistory>1</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+
+        </rollingPolicy>
+
+        <!-- encoders are assigned the type
+             ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <logger name="BrukerConvertor" level="DEBUG"/>
+    <logger name="Bruker" level="INFO"/>
+    <logger name="Jcampdx" level="INFO"></logger>
+    <root level="debug">
+        <appender-ref ref="STDOUT" />
+    </root>
+    
+</configuration>
