@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.isi-nmr</groupId>
 	<artifactId>JBruker</artifactId>
-	<version>1.0.0</version>
+	<version>0.0.1-SNAPSHOT</version>
 	<name>JAVA library for Bruker data sets</name>
 	<url>https://github.com/isi-nmr/brukerapi-java</url>
 	<description>This is a JAVA package providing I/O interface for Bruker data sets</description>

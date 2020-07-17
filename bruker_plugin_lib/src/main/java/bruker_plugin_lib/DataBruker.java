@@ -10,6 +10,11 @@ public class DataBruker extends ArrayList<INDArray> {
 	private INDArray real, imag;
 	private float[] realData;
 	private float[] imagData;
+	
+	/**
+	 * Constructor of DataBruker Class
+	 * @param data : the output of the getData method of Bruker class
+	 */
 	public DataBruker(ArrayList<INDArray> data) {
 		super();
 		this.data = data;
@@ -17,12 +22,21 @@ public class DataBruker extends ArrayList<INDArray> {
 		this.imag = data.get(1);
 	}
 
+	/**
+	 * return real data
+	 * @return real data
+	 */
 	public float[] getRealData() {
 		int dim = 0;
 		float[] m_absorptionChannelTDraw = getRealData(dim);
 		return m_absorptionChannelTDraw;
 	}
 	
+	/**
+	 * return real data in desired dimension
+	 * @param dim dimension
+	 * @return 
+	 */
 	public float[] getRealData(int dim) {
 		try {
 			long[] dims = real.shape();
@@ -50,12 +64,21 @@ public class DataBruker extends ArrayList<INDArray> {
 		this.imagData = imagData;
 	}
 
+	/**
+	 * return imaginary data
+	 * @return
+	 */
 	public float[] getImagData() {
 		int dim = 0;
 		float[] m_absorptionChannelTDraw = getImagData(dim);
 		return m_absorptionChannelTDraw;
 	}
-
+	
+	/**
+	 * return real data in desired dimension
+	 * @param dim
+	 * @return
+	 */
 	public float[] getImagData(int dim) {
 		try {
 			long[] dims = imag.shape();
@@ -75,6 +98,10 @@ public class DataBruker extends ArrayList<INDArray> {
 		}
 	}
 	
+	/**
+	 * Convert INDArray to double array
+	 * @return 3 dimension double array
+	 */
 	public double[][][] toDoubleArray() {
 		long[] fid_dims = real.shape();
 		double[][][] real_array = new double[(int) fid_dims[0]][(int) fid_dims[1]][(int) fid_dims[2]];
@@ -86,7 +113,11 @@ public class DataBruker extends ArrayList<INDArray> {
 			}
 		return real_array;
 	}
-
+	
+	/**
+	 * Convert INDArray to float array
+	 * @return 3 dimension float array
+	 */
 	public float[][][] toFloatArray() {
 		long[] fid_dims = real.shape();
 		float[][][] real_array = new float[(int) fid_dims[0]][(int) fid_dims[1]][(int) fid_dims[2]];
@@ -100,7 +131,12 @@ public class DataBruker extends ArrayList<INDArray> {
 			}
 		return real_array;
 	}
-
+	
+	/**
+	 * Convert INDArray to double array
+	 * @param indarr
+	 * @return 3 dimension double array
+	 */
 	public double[][][] toMatrix(INDArray indarr) {
 		long[] fid_dims = real.shape();
 		double[][][] real_array = new double[(int) fid_dims[0]][(int) fid_dims[1]][(int) fid_dims[2]];

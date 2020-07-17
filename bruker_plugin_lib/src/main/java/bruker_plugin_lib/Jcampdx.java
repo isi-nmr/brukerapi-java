@@ -93,7 +93,10 @@ public class Jcampdx {
 		this.visu_pars = visu_pars;
 	}
 	
-	
+	/**
+	 * constructor of Jcampdx Object
+	 * @param pathL : path to the main directory
+	 */
 	public Jcampdx(Path pathL) {
 		
 //		path_fid = path_2dseq.getParent().getParent();
@@ -148,7 +151,7 @@ public class Jcampdx {
 		}
 	}
 
-
+	
 	public static Object proc_value_clean(String value_string) {
 		try {
 			return Integer.parseInt(value_string);
@@ -279,6 +282,11 @@ public class Jcampdx {
 
 	}
 	
+	/**
+	 * read X jcmpdx file
+	 * @param filename : the path to desire directory (an example: path_fid.toString() + "\\acqp")
+	 * @return a map of keys and values
+	 */
 	public static Map<String, Object> read_jcampdx_file(String filename) {
 		String thisLine = null;
 		String temp = "";

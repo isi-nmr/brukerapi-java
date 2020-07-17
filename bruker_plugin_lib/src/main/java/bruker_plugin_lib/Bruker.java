@@ -90,7 +90,10 @@ public class Bruker {
 		return path;
 	}
 
-
+	/**
+	 * set study path 
+	 * @param path
+	 */
 	public void setPath(Path path) {
 		this.path = path;
 		logger.info("({}) is set tht path",path );
@@ -103,6 +106,9 @@ public class Bruker {
 		jcampdx = new Jcampdx(path);
 	}
 	
+	/**
+	 * identify acquisition type of data set
+	 */
 	private void ident_ACQS_TYPE() {
 		Integer ACQ_dim =  jcampdx.getAcqp().getInt("ACQ_dim");
 		Integer NPro;
@@ -150,16 +156,28 @@ public class Bruker {
 		setACQS_TYPE(ACQS_TYPE);
 	}
 	
+	/**
+	 * determine the datset contains image data or not
+	 * @return
+	 */
 	public  Boolean isImage()
     {
      return !getACQS_TYPE().contentEquals("CSI")  ;  
     }   
 	
+	/**
+	 * determine the data is reconstructed correctly or not
+	 * @return
+	 */
 	public boolean isDataValid()
 	{
 	    return data != null;
 	}   
 	
+	/**
+	 * the main method of api which gets data of the dataset
+	 * @return a DataBruker Object
+	 */
 	public DataBruker getData() {
 		List<Object> dir_rslt = scan_dir(path.getParent());
 		
@@ -184,6 +202,11 @@ public class Bruker {
 		this.data = data;
 	}
 	
+	/**
+	 * Scan the directory of study and list all files
+	 * @param path : a path to study directory
+	 * @return a List array of Objects
+	 */
 	private List<Object> scan_dir(Path path) {
 		List<Object> list_scan_result = null;
 		try (Stream<Path> walk = Files.walk(path)) {
@@ -194,16 +217,28 @@ public class Bruker {
 		return list_scan_result;
 	}
 
-
+	/**
+	 * get acquisition type
+	 * @return a string of the acquisition type
+	 */
 	public String getACQS_TYPE() {
 		return ACQS_TYPE;
 	}
 
-
+	/**
+	 * set acquisition type externally
+	 * @param aCQS_TYPE
+	 */
 	public void setACQS_TYPE(String aCQS_TYPE) {
 		ACQS_TYPE = aCQS_TYPE;
 	}
 	
+	/**
+	 * read 2dseq file and then reshape & scale and form the frame group
+	 * @param visu_pars a JcampdxData Object which contains a map of parameters of visu_pars 
+	 * @param reco a JcampdxData Object which contains a map of parameters of reco
+	 * @return an ArrayList of INDArray Objects
+	 */
 	private ArrayList<INDArray> read_2dseq(JcampdxData visu_pars, JcampdxData reco) {
 		ArrayList<Object> ArrBD = new ArrayList<>();
 		ArrayList<INDArray> data_array = new ArrayList<INDArray>();
@@ -219,6 +254,14 @@ public class Bruker {
 		return data_array;
 	}
 	
+	/**
+	 * read 2dseq binary file
+	 * @param visu_pars a JcampdxData Object which contains a map of parameters of visu_pars 
+	 * @param reco a JcampdxData Object which contains a map of parameters of reco
+	 * @return an ArrayList of Objects
+	 * @throws EOFException
+	 * @throws IOException
+	 */
 	private ArrayList<Object> read_2dseq_file(JcampdxData visu_pars, JcampdxData reco) throws EOFException, IOException {
 		FileInputStream dataStream = new FileInputStream(path.toString());
 		DataInputStream dataFilter = new DataInputStream(dataStream);
@@ -256,6 +299,13 @@ public class Bruker {
 		return data_array;
 	}
 	
+	/**
+	 * Scale data
+	 * @param data_array
+	 * @param visu_pars
+	 * @param reco
+	 * @return an ArrayList of INDArray Objects
+	 */
 	private ArrayList<INDArray> scale(ArrayList<INDArray> data_array, JcampdxData visu_pars, JcampdxData reco) {
 		// TODO Auto-generated method stub
 		INDArray VisuCoreDataSlope =  visu_pars.getINDArray("VisuCoreDataSlope");
@@ -283,6 +333,13 @@ public class Bruker {
 		return data_array;
 	}
 	
+	/**
+	 * Form frame group of data
+	 * @param data_array
+	 * @param visu_pars : a JcampdxData Object
+	 * @param reco : a JcampdxData Object
+	 * @return an ArrayList of INDArray Objects
+	 */
 	private ArrayList<INDArray> form_frame_groups(ArrayList<INDArray> data_array, JcampdxData visu_pars, JcampdxData reco) {
 		// TODO Auto-generated method stub
 		ArrayList VisuFGOrderDesc = visu_pars.getArrayList("VisuFGOrderDesc");
@@ -346,8 +403,13 @@ public class Bruker {
 //		 Object PVM_Matrix = method.get("PVM_Matrix");
 //	}
 	
-	
-	
+	/**
+	 * reorder frames of fid file
+	 * @param data_array
+	 * @param acqp
+	 * @param method
+	 * @return an ArrayList of INDArray Objects
+	 */
 	public ArrayList<INDArray> reorder_fid_frames_2d(ArrayList<INDArray> data_array, JcampdxData acqp, JcampdxData method) {
 
 		INDArray PVM_ObjOrderList_IndArr = method.getINDArray("PVM_ObjOrderList");
@@ -391,6 +453,13 @@ public class Bruker {
 		
 	}
 	
+	/**
+	 * 
+	 * @param data_array
+	 * @param acqp : a JcampdxData Object
+	 * @param method : a JcampdxData Object
+	 * @return an ArrayList of INDArray Objects
+	 */
 	public ArrayList<INDArray> reorder_fid_lines_2d(ArrayList<INDArray> data_array, JcampdxData acqp, JcampdxData method) {
 
 		int PVM_EncNReceivers = method.getInt("PVM_EncNReceivers");
@@ -421,6 +490,13 @@ public class Bruker {
 
 	}
 	
+	/**
+	 * reshape fid file 
+	 * @param ArrBD
+	 * @param acqp : a JcampdxData Object
+	 * @param method : a JcampdxData Object
+	 * @return an ArrayList of INDArray Objects
+	 */
 	public ArrayList<INDArray> reshape_fid(ArrayList<Object> ArrBD, JcampdxData acqp, JcampdxData method) {
 		INDArray real = Nd4j.zeros(ArrBD.size() / 2);
 		INDArray imag = Nd4j.zeros(ArrBD.size() / 2);
@@ -457,6 +533,11 @@ public class Bruker {
 		return data_array;
 	}
 	
+	/**
+	 * 
+	 * @param acqp : a JcampdxData Object
+	 * @return
+	 */
 	public int[] get_acq_trim(JcampdxData acqp) {
 		String ACQS_TYPE = getACQS_TYPE();
 		INDArray ACQ_size = acqp.getINDArray("ACQ_size");
@@ -468,6 +549,11 @@ public class Bruker {
 		}
 	}
 	
+	/**
+	 * reorder fid matrix 
+	 * @param acqp : a JcampdxData Object
+	 * @param method : a JcampdxData Object
+	 */
 	public void get_reorder_schemes_fid(JcampdxData acqp, JcampdxData method) {
 		String ACQS_TYPE = getACQS_TYPE();
 		int NR = acqp.getInt("NR");
@@ -538,6 +624,13 @@ public class Bruker {
 		}
 	}
 	
+	/**
+	 * read fid file 
+	 * @param acqp : a JcampdxData Object
+	 * @param method : a JcampdxData Object
+	 * @return
+	 * @throws IOException
+	 */
 	public ArrayList<Object> read_fid_file(JcampdxData acqp, JcampdxData method) throws IOException {
 		FileInputStream dataStream = new FileInputStream(path.toString());
 		DataInputStream dataFilter = new DataInputStream(dataStream);
@@ -567,6 +660,15 @@ public class Bruker {
 		return ArrBD;
 	}
 	
+	/**
+	 * convert fid binary file to decimal
+	 * @param buffReader
+	 * @param arg1	byte format
+	 * @param arg2 byte order
+	 * @return
+	 * @throws EOFException
+	 * @throws IOException
+	 */
 	private ArrayList<Object> dtype(DataInputStream buffReader, String arg1, String arg2) throws EOFException, IOException {
 		ArrayList<Object> ArrBD = new ArrayList<>();
 		if ((arg1.contentEquals("GO_32BIT_SGN_INT") || arg1.contentEquals("_32BIT_SGN_INT")) && (arg2.contentEquals("little") || arg2.contentEquals("littleEndian"))) {
@@ -590,7 +692,13 @@ public class Bruker {
 		return ArrBD;
 	}
 	
-	
+	/**
+	 * convert binary to 32-bit Integer format in little Indian order
+	 * @param DataInputStream Object of buffReader binary buffer 
+	 * @return
+	 * @throws EOFException
+	 * @throws IOException
+	 */
 	private ArrayList<Object> rev_int32_conversion(DataInputStream buffReader) throws EOFException, IOException {
 		ArrayList<Object> ArrBD = new ArrayList<>();
 		while (buffReader.available() > 0) {
@@ -605,7 +713,12 @@ public class Bruker {
 		}
 		return ArrBD;
 	}
-
+	/**
+	 * convert binary to 32-bit  Integer format in big Indian order
+	 * @param buffReader
+	 * @return
+	 * @throws IOException
+	 */
 	private ArrayList<Object> int_conversion(DataInputStream buffReader) throws IOException {
 		ArrayList<Object> ArrBD = new ArrayList<>();
 		while (buffReader.available() > 0) {
@@ -615,6 +728,13 @@ public class Bruker {
 		return ArrBD;
 	}
 
+	/**
+	 * convert binary to 16-bit  Integer format in little Indian order
+	 * @param buffReader
+	 * @return
+	 * @throws EOFException
+	 * @throws IOException
+	 */
 	private ArrayList<Object> rev_int16_conversion(DataInputStream buffReader) throws EOFException, IOException {
 		ArrayList<Object> ArrBD = new ArrayList<>();
 		while (buffReader.available() > 0) {
@@ -627,7 +747,14 @@ public class Bruker {
 		}
 		return ArrBD;
 	}
-
+	
+	/**
+	 * convert binary to 16-bit  Integer format in big Indian order
+	 * @param buffReader
+	 * @return
+	 * @throws EOFException
+	 * @throws IOException
+	 */
 	private ArrayList<Object> int16_conversion(DataInputStream buffReader) throws EOFException, IOException {
 		ArrayList<Object> ArrBD = new ArrayList<>();
 		while (buffReader.available() > 0) {
@@ -640,7 +767,13 @@ public class Bruker {
 		}
 		return ArrBD;
 	}
-
+	
+	/**
+	 * convert binary to Float format in little Indian order
+	 * @param buffReader
+	 * @return
+	 * @throws IOException
+	 */
 	private ArrayList<Object> rev_float_conversion(DataInputStream buffReader) throws IOException {
 		ArrayList<Object> ArrBD = new ArrayList<>();
 		while (buffReader.available() > 0) {
@@ -656,6 +789,12 @@ public class Bruker {
 		return ArrBD;
 	}
 
+	/**
+	 * convert binary to Float format in big Indian order
+	 * @param buffReader
+	 * @return
+	 * @throws IOException
+	 */
 	private ArrayList<Object> float_conversion(DataInputStream buffReader) throws IOException {
 		ArrayList<Object> ArrBD = new ArrayList<>();
 		while (buffReader.available() > 0) {
@@ -665,6 +804,12 @@ public class Bruker {
 		return ArrBD;
 	}
 	
+	/**
+	 * convert binary to Double format in little Indian order
+	 * @param buffReader
+	 * @return
+	 * @throws IOException
+	 */
 	private ArrayList<Object> rev_double_conversion(DataInputStream buffReader) throws IOException {
 		ArrayList<Object> ArrBD = new ArrayList<>();
 		while (buffReader.available() > 0) {
@@ -684,6 +829,12 @@ public class Bruker {
 		return ArrBD;
 	}
 	
+	/**
+	 * convert binary to Double format in big Indian order
+	 * @param buffReader
+	 * @return
+	 * @throws IOException
+	 */
 	private ArrayList<Object> double_conversion(DataInputStream buffReader) throws IOException {
 		ArrayList<Object> ArrBD = new ArrayList<>();
 		while (buffReader.available() > 0) {

@@ -9,7 +9,6 @@ public interface getData {
 	public double[] get_dataDoubleImag();
 	public float[] get_dataFloatReal_vector();
 	public float[] get_dataFloatImag_vector();
-	public String[] get_dimensionNames()
 	public float[] get_fov();
 	public float get_sw();
 	public double get_transmitterFreq();
