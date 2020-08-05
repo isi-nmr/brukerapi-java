@@ -21,7 +21,7 @@ public class DataBruker extends ArrayList<INDArray> {
 		this.real = data.get(0);
 		this.imag = data.get(1);
 	}
-
+	
 	/**
 	 * return real data
 	 * @return real data

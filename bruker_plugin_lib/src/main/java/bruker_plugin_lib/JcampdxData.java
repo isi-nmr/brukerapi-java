@@ -390,7 +390,7 @@ public class JcampdxData {
 	 * @param defGradMatrix default value
 	 * @return 2d matrix
 	 */
-	float[][] getGradMatrix(int dim, float[][] defGradMatrix)
+	public float[][] getGradMatrix(int dim, float[][] defGradMatrix)
 	{    
 		float[][] gradMatrix = getFloat3DMatrix("ACQ_grad_matrix")[0];
 		if(gradMatrix==null && dim<gradMatrix.length) {
@@ -406,7 +406,7 @@ public class JcampdxData {
 	 * @param defGradMatrix
 	 * @return
 	 */
-	float[][] getGradMatrixVoi(int dim, float[][] defGradMatrix)
+	public float[][] getGradMatrixVoi(int dim, float[][] defGradMatrix)
 	{        
 		float[][] gradMatrix = getFloat3DMatrix("PVM_VoxArrGradOrient")[0];
 		if(gradMatrix==null && dim<gradMatrix.length) {

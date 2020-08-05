@@ -53,10 +53,10 @@ public static void main(String[] args) throws EOFException, IOException {
 	String dataset_path = fs_prefix + test_data_meta.get("path");
 	String ACQS_TYPE = (String) test_data_meta.get("acq_type");
 	Bruker bruker = new Bruker();
-	bruker.setPath(Paths.get("D:\\DATA SETs\\CSI\\Mouse\\28\\fid"));
+	bruker.setPath(Paths.get("D:\\DATA SETs\\CSI\\Mouse\\28\\pdata\\1\\2dseq"));
 //	bruker.setACQS_TYPE("CSI");
 	DataBruker data = bruker.getData();
-	
+//	bruker.getPath();
 	JcampdxData acqp = bruker.getJcampdx().getAcqp();
 	boolean iskspace = acqp.isKspace();
 	float[] getPositionVoi = bruker.getJcampdx().getMethod().getPositionVoi(new float[] {1,2,3});
@@ -64,6 +64,7 @@ public static void main(String[] args) throws EOFException, IOException {
 	float[][] getFloat3DMatrix = acqp.getFloat3DMatrix("ACQ_grad_matrix")[0];
 	float[] getFovVoi = bruker.getJcampdx().getMethod().getFovVoi(new float[] {1,2,3});
 	float[] getFov = acqp.getFov(new float[] {1,2,3});
+	float[] getFovDirect = bruker.getJcampdx().getFov(new float[] {1,2,3});
 	String neclus = bruker.getJcampdx().getMethod().getNucleus();
 	double resFr = bruker.getJcampdx().getMethod().getResonaceFreq((float)(127.728513));
 	float thick = acqp.getSliceThick(1);
@@ -71,6 +72,8 @@ public static void main(String[] args) throws EOFException, IOException {
 	float[][] gradMatrix={{1,0,0},{0,1,0},{0,0,1}};  
 	float[][] gradMat = acqp.getGradMatrix(0, gradMatrix);
 	float[][] gradMatVoi = bruker.getJcampdx().getMethod().getGradMatrixVoi(0, gradMatrix);
+//	bruker.getJcampdx().getMethod().getGradMatrix(dim, defGradMatrix)
+	
 //	DataBruker dataBruker = new DataBruker(data);
 	logger.debug("succesfull");
 	
