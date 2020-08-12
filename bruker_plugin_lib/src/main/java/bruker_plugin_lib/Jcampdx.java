@@ -1,17 +1,19 @@
 package bruker_plugin_lib;
 
-import java.io.*;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Jcampdx {
 	private JcampdxData acqp;
@@ -27,7 +29,7 @@ public class Jcampdx {
 
 	/**
 	 * get acqp file
-	 * 
+	 *
 	 * @return a map with String keys and Object value of accp
 	 */
 	public JcampdxData getAcqp() {
@@ -48,7 +50,7 @@ public class Jcampdx {
 
 	/**
 	 * get method file
-	 * 
+	 *
 	 * @return a map with String keys and Object value of method
 	 */
 	public JcampdxData getMethod() {
@@ -69,7 +71,7 @@ public class Jcampdx {
 
 	/**
 	 * get reco file
-	 * 
+	 *
 	 * @return a map with String keys and Object value of reco
 	 */
 	public JcampdxData getReco() {
@@ -90,7 +92,7 @@ public class Jcampdx {
 
 	/**
 	 * get visu_pars file
-	 * 
+	 *
 	 * @return a map with String keys and Object value of visu_pars
 	 */
 	public JcampdxData getVisu_pars() {
@@ -111,8 +113,8 @@ public class Jcampdx {
 
 	/**
 	 * constructor of Jcampdx Object
-	 * 
-	 * @param pathL : path to the main directory
+	 *
+	 * @param bruker : path to the main directory
 	 */
 	public Jcampdx(Bruker bruker) {
 		this.bruker = bruker;
@@ -143,7 +145,7 @@ public class Jcampdx {
 
 	/**
 	 * scan a list of all files in the path
-	 * 
+	 *
 	 * @param path the path of bruker data
 	 * @return list of all files in path
 	 */
@@ -160,7 +162,7 @@ public class Jcampdx {
 
 	/**
 	 * Check specific file exists in list directory or not
-	 * 
+	 *
 	 * @param Filename
 	 * @param list_scan_result
 	 * @return boolean value 1:existed 0:not existed
@@ -272,7 +274,7 @@ public class Jcampdx {
 				if (position > 0) {
 					data_frac = data_string.substring(1, position);
 				} else {
-					data_frac = data_string.substring(2, data_string.length() - 1);
+					data_frac = data_string.substring(1, data_string.length() - 1);
 				}
 				data_frac = data_frac.replaceAll(" ", "");
 				String[] value = data_frac.split(",");
@@ -305,7 +307,7 @@ public class Jcampdx {
 
 	/**
 	 * read X jcmpdx file
-	 * 
+	 *
 	 * @param filename : the path to desire directory (an example:
 	 *                 path_fid.toString() + "\\acqp")
 	 * @return a map of keys and values
@@ -339,7 +341,8 @@ public class Jcampdx {
 					String[] splited2 = s.split("=");
 					a = splited2[0];
 					b = splited2[1];
-//					if(a.contains("VisuFGOrderDesc"))
+					if(a.contains("VisuFGOrderDesc"))
+						System.out.println("found it");
 					aMap.put(a, proc_entry(b.replaceFirst("\\s++$", "")));
 				}
 			}
@@ -368,23 +371,55 @@ public class Jcampdx {
 		return FOV;
 	}
 
-	float[][] getGradMatrix(int dim, float[][] gradMatrix) {
+	public float[][] getGradMatrix(int dim, float[][] gradMatrix) {
 		return getAcqp().getGradMatrix(dim, gradMatrix);
 	}
 
-	float[][] getGradMatrixVoi(int dim, float[][] gradMatrix) {
+	public float[][] getGradMatrixVoi(int dim, float[][] gradMatrix) {
 		return getMethod().getGradMatrixVoi(dim, gradMatrix);
 	}
 
-	float[] getPositionRPS(float[] pos) {
+	public float[] getPositionRPS(float[] pos) {
 		return getMethod().getPositionRPS(pos);
 	}
 
-	float[] getPositionVoi(float[] defValue) {
+	public float[] getPositionVoi(float[] defValue) {
 		return getMethod().getPositionVoi(defValue);
 	}
 
 	public float[] getFovVoi(float[] fov) {
 		return getMethod().getFovVoi(fov);
+	}
+
+	public float getSliceThick(float def) {
+		return getAcqp().getSliceThick(def);
+	}
+
+	public String getNucleus() {
+		return getMethod().getNucleus();
+	}
+
+	public double getSW(int i) {
+		return getAcqp().getSW(4000);
+	}
+
+	public String[] getRecoQOPTS(String reco_qopts) {
+		return getReco().getStringVector("RECO_qopts");
+	}
+
+	public float getGRPDLY(String grpdly, int i) {
+		return getAcqp().getFloat("GRPDLY", 0);
+	}
+
+	public Object getResonaceFreq(float v) {
+		return getAcqp().getResonaceFreq((float)(127.728513))*1e6;
+	}
+
+	public double getTE(int i) {
+		return getMethod().getTE(i);
+	}
+
+	public double getTR(int i) {
+		return getMethod().getTR(i);
 	}
 }

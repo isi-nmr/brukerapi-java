@@ -1,6 +1,7 @@
 package bruker_plugin_lib;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -11,7 +12,7 @@ import org.slf4j.LoggerFactory;
 public class JcampdxData {
 	private Map<String, Object> parameters;
 	private Logger logger = LoggerFactory.getLogger(JcampdxData.class);
-	
+
 	/**
 	 * constructor of JcampdxData Object
 	 * @param parameters map of parameters : acqp, method,...
@@ -20,7 +21,7 @@ public class JcampdxData {
 		super();
 		this.parameters = parameters;
 	}
-	
+
 	/**
 	 * get string type parameter
 	 * @param TAG : the key string
@@ -35,7 +36,7 @@ public class JcampdxData {
 		}
 		return param;
 	}
-	
+
 	/**
 	 * get float type parameter
 	 * @param TAG : the key string
@@ -44,14 +45,14 @@ public class JcampdxData {
 	 */
 	public Float getFloat(String TAG, float defValue) {
 		Float floatValue = getFloat(TAG);
-		if(floatValue==null)  { 
-		        floatValue = defValue;
-				logger.error("Problem to load {}. Default value used: {}", TAG, defValue); 
+		if(floatValue==null)  {
+			floatValue = defValue;
+			logger.error("Problem to load {}. Default value used: {}", TAG, defValue);
 		}
-	
+
 		return floatValue;
 	}
-	
+
 	/**
 	 * get float type parameter without default parameter
 	 * @param TAG
@@ -95,12 +96,12 @@ public class JcampdxData {
 		}
 		return param;
 	}
-	
-	
+
+
 	/**
 	 * get Integer type parameter
 	 * @param TAG : : the key string
-	 * @return 
+	 * @return
 	 */
 	public Integer getInt(String TAG) {
 		Integer param = null;
@@ -139,7 +140,7 @@ public class JcampdxData {
 		}
 		return param;
 	}
-	
+
 	/**
 	 * get INDArray type in case the parameter is an array of diffrent type
 	 * @param TAG : the key string
@@ -197,25 +198,25 @@ public class JcampdxData {
 		}
 		return param;
 	}
-	
+
 	/**
 	 * get field of view
 	 * @param fov  : default value
 	 * @return float array
 	 */
 	public float[] getFov(float[] fov)
-	 {  
+	{
 		float[] FOV = null;
 		String[] dic = {"PVM_FovCm","RECO_fov", "ACQ_fov"};
 		for(String element:dic) {
 			try {
-					FOV = getINDArray(element).data().asFloat();
-					if(FOV != null) {
-						break;
-					}
-				} catch(Exception exception) {
-					
+				FOV = getINDArray(element).data().asFloat();
+				if(FOV != null) {
+					break;
 				}
+			} catch(Exception exception) {
+
+			}
 		}
 		if(FOV == null) {
 			FOV = fov;
@@ -223,26 +224,26 @@ public class JcampdxData {
 		}
 		//why???
 		for(int i=0; i<FOV.length;i++)
-		      FOV[i]*=10;
+			FOV[i]*=10;
 		return FOV;
-	 }
-	 
+	}
+
 	/**
 	 * get the field of view of Voxel of Interst
 	 * @param fov : default
 	 * @return
 	 */
 	public float[] getFovVoi(float[] fov)
-	 {
+	{
 		float [] FOV = getINDArray("PVM_VoxArrSize").data().asFloat();
 		if(FOV==null )
-				  {  
-					FOV = fov;
-					logger.error("Problem to load FOV. Default value used: {}", fov);
-				  }
+		{
+			FOV = fov;
+			logger.error("Problem to load FOV. Default value used: {}", fov);
+		}
 		return FOV;
-	 }
-		
+	}
+
 	/**
 	 * get 3d matrix type parameters
 	 * @param TAG : the key string
@@ -273,133 +274,133 @@ public class JcampdxData {
 	 * @return
 	 */
 	public float[] getPositionRPS(float[] pos)
-	 {
+	{
 		// To do : make sure the pos has three args
-	   pos[0]= -getFloat("PVM_SPackArrReadOffset",pos[0]);
-	   pos[1]= -getFloat("PVM_SPackArrPhase1Offset",pos[1]);
-	   pos[2]= -getFloat("PVM_SPackArrSliceOffset",pos[2]) ;   
-	  return pos;
-	 } 
-	
+		pos[0]= -getFloat("PVM_SPackArrReadOffset",pos[0]);
+		pos[1]= -getFloat("PVM_SPackArrPhase1Offset",pos[1]);
+		pos[2]= -getFloat("PVM_SPackArrSliceOffset",pos[2]) ;
+		return pos;
+	}
+
 	/**
 	 * get position of voxel of interst
 	 * @param defValue
 	 * @return
 	 */
-	public float[] getPositionVoi( float[] defValue){  
-		   float[] positionVoi = getINDArray("PVM_VoxArrPosition").data().asFloat();
-		   if(positionVoi==null )
-			  {  
-			   positionVoi = defValue;
-				logger.error("Problem to load FOV. Default value used: {}", defValue);
-			  }
-		   
-		   for(int i=0; i<positionVoi.length;i++)
-			   positionVoi[i]*=-1;
-		   return positionVoi;
+	public float[] getPositionVoi( float[] defValue){
+		float[] positionVoi = getINDArray("PVM_VoxArrPosition").data().asFloat();
+		if(positionVoi==null )
+		{
+			positionVoi = defValue;
+			logger.error("Problem to load FOV. Default value used: {}", defValue);
+		}
+
+		for(int i=0; i<positionVoi.length;i++)
+			positionVoi[i]*=-1;
+		return positionVoi;
 	}
 	/**
 	 * determine that data is in KSpace or not
 	 * @return
 	 */
 	boolean isKspace()
-	 {
-	   String version = getString("PV");
-	   if(version!=null)
-	   {    
-	    String[] ver = version.split("\\.");
-	    if(ver!=null)
-	    {
-	      try
-	      {    
-	       int v = Integer.parseInt(ver[0]);
-	       if(v>5)
-	        return false;
-	      }
-	      catch (NumberFormatException nfe)
-	    {
-	    	  logger.error("Problem to detect version of Paravision.");
-	    }
-	    }   
-	   }
-	       return true;
-	 } 
-	
+	{
+		String version = getString("PV");
+		if(version!=null)
+		{
+			String[] ver = version.split("\\.");
+			if(ver!=null)
+			{
+				try
+				{
+					int v = Integer.parseInt(ver[0]);
+					if(v>5)
+						return false;
+				}
+				catch (NumberFormatException nfe)
+				{
+					logger.error("Problem to detect version of Paravision.");
+				}
+			}
+		}
+		return true;
+	}
+
 	/**
 	 * get Nucleus of study
 	 * @return
 	 */
-	String getNucleus()
-	 {        
-	  return getString("PVM_Nucleus1Enum");
-	 }
-	
+	public String getNucleus()
+	{
+		return getString("PVM_Nucleus1Enum");
+	}
+
 	/**
 	 * get resonance frequency of study
 	 * @param defValue
 	 * @return
 	 */
-	 double getResonaceFreq(float defValue)
-	 {
-	   return getFloat("SFO1",defValue);    
-	 }
-	 
-	 /**
-	  * get slice thickness of study
-	  * @param defValue
-	  * @return
-	  */
-	 float getSliceThick(float defValue)
+	public double getResonaceFreq(float defValue)
 	{
-	  return getFloat("ACQ_slice_thick",defValue);
+		return getFloat("SFO1",defValue);
 	}
-	 
+
+	/**
+	 * get slice thickness of study
+	 * @param defValue
+	 * @return
+	 */
+	public float getSliceThick(float defValue)
+	{
+		return getFloat("ACQ_slice_thick",defValue);
+	}
+
 	/**
 	 * get TE of study
 	 * @param defValue
 	 * @return
 	 */
-	float getTE(float defValue)
-	 {     
-	  return  getFloat("PVM_EchoTime",defValue);
-	 }
-	
+	public float getTE(float defValue)
+	{
+		return  getFloat("PVM_EchoTime",defValue);
+	}
+
 	/**
 	 * get TR of study
 	 * @param defValue
 	 * @return
 	 */
-	float getTR(float defValue)
-	 {     
-	  return  getFloat("PVM_RepetitionTime",defValue);
-	 }
-	
+	public float getTR(float defValue)
+	{
+		return  getFloat("PVM_RepetitionTime",defValue);
+	}
+
 	/**
 	 * get spectral width
 	 * @param defValue
 	 * @return
 	 */
-	float getSW(float defValue)
-	 {     
-	  return  getFloat("SW_h",defValue);
-	 }
-	
+	public float getSW(float defValue)
+	{
+		return  getFloat("SW_h",defValue);
+	}
+
 	/**
-	 * get the gradient matrix 
-	 * @param dim 
+	 * get the gradient matrix
+	 * @param dim
 	 * @param defGradMatrix default value
 	 * @return 2d matrix
 	 */
 	public float[][] getGradMatrix(int dim, float[][] defGradMatrix)
-	{    
+	{
 		float[][] gradMatrix = getFloat3DMatrix("ACQ_grad_matrix")[0];
 		if(gradMatrix==null && dim<gradMatrix.length) {
 			gradMatrix = defGradMatrix;
-		    logger.error("Problem to load Grad Matrix. Default value used: {}", defGradMatrix.toString());
+			logger.error("Problem to load Grad Matrix. Default value used: {}", defGradMatrix.toString());
 		}
-	  return gradMatrix;
+		return gradMatrix;
 	}
-	
+
 	/**
 	 * get the gradient matrix of voxel of Interest
 	 * @param dim
@@ -407,15 +408,30 @@ public class JcampdxData {
 	 * @return
 	 */
 	public float[][] getGradMatrixVoi(int dim, float[][] defGradMatrix)
-	{        
+	{
 		float[][] gradMatrix = getFloat3DMatrix("PVM_VoxArrGradOrient")[0];
 		if(gradMatrix==null && dim<gradMatrix.length) {
 			gradMatrix = defGradMatrix;
-		    logger.error("Problem to load Grad Matrix. Default value used: {}", defGradMatrix.toString());
+			logger.error("Problem to load Grad Matrix. Default value used: {}", defGradMatrix.toString());
 		}
-	  return gradMatrix;  
+		return gradMatrix;
 	}
-	
-	
-	
+
+	public String[] getStringVector(String TAG) {
+
+		String[] strStr = null;
+
+
+			try {
+				List<String> strArr = (List<String>) parameters.get(TAG);
+				if (strArr != null)
+					strStr = strArr.toArray(new String[0]);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		return strStr;
+	}
+
 }

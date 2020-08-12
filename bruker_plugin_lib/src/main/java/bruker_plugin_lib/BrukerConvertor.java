@@ -53,25 +53,33 @@ public static void main(String[] args) throws EOFException, IOException {
 	String dataset_path = fs_prefix + test_data_meta.get("path");
 	String ACQS_TYPE = (String) test_data_meta.get("acq_type");
 	Bruker bruker = new Bruker();
-	bruker.setPath(Paths.get("D:\\DATA SETs\\CSI\\Mouse\\28\\pdata\\1\\2dseq"));
+	bruker.setPath(Paths.get("D:\\DATA SETs\\from jana\\Cristina\\20200313_112746_phantom_rat_13032020_phantom_rat_test_13032020_1_1_Jana\\35\\fid"));
+	bruker.isImage();
 //	bruker.setACQS_TYPE("CSI");
-	DataBruker data = bruker.getData();
+		
+		  DataBruker data = bruker.getData(); 
+		  float[] realdata = data.getRealData();
+		  float[] imagdata = data.getImagData();
+		 System.out.println("finished");
 //	bruker.getPath();
-	JcampdxData acqp = bruker.getJcampdx().getAcqp();
-	boolean iskspace = acqp.isKspace();
-	float[] getPositionVoi = bruker.getJcampdx().getMethod().getPositionVoi(new float[] {1,2,3});
-	float[] getPositionRPS = bruker.getJcampdx().getMethod().getPositionRPS(new float[] {1,2,3});
-	float[][] getFloat3DMatrix = acqp.getFloat3DMatrix("ACQ_grad_matrix")[0];
-	float[] getFovVoi = bruker.getJcampdx().getMethod().getFovVoi(new float[] {1,2,3});
-	float[] getFov = acqp.getFov(new float[] {1,2,3});
-	float[] getFovDirect = bruker.getJcampdx().getFov(new float[] {1,2,3});
-	String neclus = bruker.getJcampdx().getMethod().getNucleus();
-	double resFr = bruker.getJcampdx().getMethod().getResonaceFreq((float)(127.728513));
-	float thick = acqp.getSliceThick(1);
-	float TE = bruker.getJcampdx().getMethod().getTE(1);
-	float[][] gradMatrix={{1,0,0},{0,1,0},{0,0,1}};  
-	float[][] gradMat = acqp.getGradMatrix(0, gradMatrix);
-	float[][] gradMatVoi = bruker.getJcampdx().getMethod().getGradMatrixVoi(0, gradMatrix);
+		/*
+		 * JcampdxData acqp = bruker.getJcampdx().getAcqp(); boolean iskspace =
+		 * acqp.isKspace(); float[] getPositionVoi =
+		 * bruker.getJcampdx().getMethod().getPositionVoi(new float[] {1,2,3}); float[]
+		 * getPositionRPS = bruker.getJcampdx().getMethod().getPositionRPS(new float[]
+		 * {1,2,3}); float[][] getFloat3DMatrix =
+		 * acqp.getFloat3DMatrix("ACQ_grad_matrix")[0]; float[] getFovVoi =
+		 * bruker.getJcampdx().getMethod().getFovVoi(new float[] {1,2,3}); float[]
+		 * getFov = acqp.getFov(new float[] {1,2,3}); float[] getFovDirect =
+		 * bruker.getJcampdx().getFov(new float[] {1,2,3}); String neclus =
+		 * bruker.getJcampdx().getMethod().getNucleus(); double resFr =
+		 * bruker.getJcampdx().getMethod().getResonaceFreq((float)(127.728513)); float
+		 * thick = acqp.getSliceThick(1); float TE =
+		 * bruker.getJcampdx().getMethod().getTE(1); float[][]
+		 * gradMatrix={{1,0,0},{0,1,0},{0,0,1}}; float[][] gradMat =
+		 * acqp.getGradMatrix(0, gradMatrix); float[][] gradMatVoi =
+		 * bruker.getJcampdx().getMethod().getGradMatrixVoi(0, gradMatrix);
+		 */
 //	bruker.getJcampdx().getMethod().getGradMatrix(dim, defGradMatrix)
 	
 //	DataBruker dataBruker = new DataBruker(data);
@@ -79,56 +87,60 @@ public static void main(String[] args) throws EOFException, IOException {
 	
 	
 	
+		/*
+		 * Reco reco = new Reco("D:\\DATA SETs\\Data for test spectIm\\7\\pdata\\1\\");
+		 * //scan.initialize(); float[] real = reco.getRealData(0); float[] imag =
+		 * reco.getImagData(0);
+		 */
 	
-	
-	
-//	Scan scan = new Scan("D:/DATA SETs/data from jana/data for oreintation/brukerImage/6/");
-//	//scan.initialize();
+//	
+	Scan scan = new Scan("D:\\DATA SETs\\Data for test spectIm\\20200122_101204_phantom_orientation_1_1\\7\\");
+    //scan.initialize();
 //	float[] real = scan.getRealData(0);
 //	float[] imag = scan.getImagData(0);
-//	//INDArray b = (INDArray) a[0];
-//	////long startTime = System.nanoTime();
-//	//double[][][] c = scan.toMatrix(b);
-//	//long endTime = System.nanoTime();
-//	//System.out.println((endTime - startTime)/1000000);
-//	//double[][][] d = scan.toVector(b);
-//	//long endTime1 = System.nanoTime();
-//	//System.out.println((endTime1 - endTime)/1000000);
-//	//long[] a = scan.getFid_dims();
-//	System.out.println("finished");
-//	//System.out.println(c==d);
-//	 //NDArray FOV = scan.getAcqp("ACQ_fov");
-//	 //double[][][] aout = scan.getDouble3DMatrix("ACQ_grad_matrix");
-//	 Float out1 = scan.getFloat("FW");
-//	  //float[] out12 = scan.getFloatVector("ACQ_fov");
-//	 //String out2 = scan.getString("ACQ_scan_size");
-//	 
-//	 //float a = (float) scan.getAcqp("SFO1");
-//	 //System.out.println(Float.valueOf(out1));
-//  	 //double[] bout = aout.getDoubleVector();
-//	 //scan.getData(); 
-//	 System.out.println("finished");
-//	Reco reco = new Reco("D:/DATA SETs/data from jana/data for oreintation/brukerImage/6/pdata/1/");
-//	long[] a = reco.get_dims();
-//	float[] real = reco.getRealData(0);
-//	float[] imag = reco.getImagData(0);
-	//scan.getAcqp("ACQ_phase1_offset");
-	//Float f = reco.getFloat("ACQ_slice_thick");
-//	String[] f = reco.getStringVector("RECO_qopts");
-	//double[][] fov = scan.getDoubleMatrix("PVM_VoxArrPosition");
-	//String PV = scan.getString("PV");
-	//Float PVM_EchoTime = scan.getFloat("ACQ_phase1_offset");
-	
-//	int visufgo = reco.getInt("VisuFGOrderDescDim");
-//	Float out1 = reco.getFloat("FW");
-//	String out2 = reco.getString("ACQ_scan_size");
-//	double[][][] aout = reco.getDouble3DMatrix("ACQ_grad_matrix");
-	//float out12 = reco.getFloat("PVM_EchoTime");
-	//float[] data = reco.getImagData(0);
-	//long[] dims = reco.get_dims();
-	
-//	System.out.println(visufgo);
-    //System.out.println(PV);
+////	//INDArray b = (INDArray) a[0];
+////	////long startTime = System.nanoTime();
+////	//double[][][] c = scan.toMatrix(b);
+////	//long endTime = System.nanoTime();
+////	//System.out.println((endTime - startTime)/1000000);
+////	//double[][][] d = scan.toVector(b);
+////	//long endTime1 = System.nanoTime();
+////	//System.out.println((endTime1 - endTime)/1000000);
+////	//long[] a = scan.getFid_dims();
+////	System.out.println("finished");
+////	//System.out.println(c==d);
+////	 //NDArray FOV = scan.getAcqp("ACQ_fov");
+////	 //double[][][] aout = scan.getDouble3DMatrix("ACQ_grad_matrix");
+////	 Float out1 = scan.getFloat("FW");
+////	  //float[] out12 = scan.getFloatVector("ACQ_fov");
+////	 //String out2 = scan.getString("ACQ_scan_size");
+////	 
+////	 //float a = (float) scan.getAcqp("SFO1");
+////	 //System.out.println(Float.valueOf(out1));
+////  	 //double[] bout = aout.getDoubleVector();
+////	 //scan.getData(); 
+////	 System.out.println("finished");
+////	Reco reco = new Reco("D:/DATA SETs/data from jana/data for oreintation/brukerImage/6/pdata/1/");
+////	long[] a = reco.get_dims();
+////	float[] real = reco.getRealData(0);
+////	float[] imag = reco.getImagData(0);
+//	//scan.getAcqp("ACQ_phase1_offset");
+//	//Float f = reco.getFloat("ACQ_slice_thick");
+////	String[] f = reco.getStringVector("RECO_qopts");
+//	//double[][] fov = scan.getDoubleMatrix("PVM_VoxArrPosition");
+//	//String PV = scan.getString("PV");
+//	//Float PVM_EchoTime = scan.getFloat("ACQ_phase1_offset");
+//	
+////	int visufgo = reco.getInt("VisuFGOrderDescDim");
+////	Float out1 = reco.getFloat("FW");
+////	String out2 = reco.getString("ACQ_scan_size");
+////	double[][][] aout = reco.getDouble3DMatrix("ACQ_grad_matrix");
+//	//float out12 = reco.getFloat("PVM_EchoTime");
+//	//float[] data = reco.getImagData(0);
+//	//long[] dims = reco.get_dims();
+//	
+////	System.out.println(visufgo);
+//    //System.out.println(PV);
 	
 	
 	

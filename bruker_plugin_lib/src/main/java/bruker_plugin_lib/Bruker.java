@@ -1,21 +1,6 @@
 package bruker_plugin_lib;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+import com.google.common.primitives.Ints;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.INDArrayIndex;
@@ -24,14 +9,23 @@ import org.nd4j.linalg.util.ArrayUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.primitives.Ints;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Bruker {
 	private Logger logger = LoggerFactory.getLogger(Bruker.class);
 	private String[] SUPPORTED_DATA_FILE_TYPES = new String[] { "fid", "2dseq", "1i", "1r" };
+
 	Jcampdx jcampdx;
 	private Path path;
-	private ArrayList<INDArray> data;
+	public ArrayList<INDArray> data;
 	private String ACQS_TYPE;
 	private int[] reshape_scheme_1;
 	private int[] reshape_scheme_2;
@@ -82,7 +76,7 @@ public class Bruker {
 
 	/**
 	 * set study path
-	 * 
+	 *
 	 * @param path
 	 */
 	public void setPath(Path path) {
@@ -96,6 +90,7 @@ public class Bruker {
 			logger.error("File {} is not a supported Bruker data type", filename);
 		}
 		jcampdx = new Jcampdx(this);
+		ident_ACQS_TYPE();
 	}
 
 	/**
@@ -126,6 +121,7 @@ public class Bruker {
 			if (ACQ_dim_desc.equals(Arrays.asList((new String[] { "Spectroscopic", "Spatial", "Spatial" })))) {
 				ACQS_TYPE = "CSI";
 				setACQS_TYPE(ACQS_TYPE);
+				return;
 			}
 			if (ACQ_dim_desc.equals(Arrays.asList((new String[] { "Spectroscopic", "Spectroscopic" })))) {
 				ACQS_TYPE = "UNKNOWN";
@@ -136,21 +132,31 @@ public class Bruker {
 		String ACQS_TYPE;
 		if (NPro != null && ACQ_dim == 2) {
 			ACQS_TYPE = "RADIAL_2D";
+			setACQS_TYPE(ACQS_TYPE);
+			return;
 		} else if (NPro != null && ACQ_dim == 3) {
 			ACQS_TYPE = "RADIAL_3D";
+			setACQS_TYPE(ACQS_TYPE);
+			return;
 		} else if (CSISignalType != null) {
 			ACQS_TYPE = "CSI";
+			setACQS_TYPE(ACQS_TYPE);
+			return;
 		} else if (ACQ_dim == 3) {
 			ACQS_TYPE = "CART_3D";
+			setACQS_TYPE(ACQS_TYPE);
+			return;
 		} else {
 			ACQS_TYPE = "CART_2D";
+			setACQS_TYPE(ACQS_TYPE);
+			return;
 		}
-		setACQS_TYPE(ACQS_TYPE);
+
 	}
 
 	/**
 	 * determine the datset contains image data or not
-	 * 
+	 *
 	 * @return
 	 */
 	public Boolean isImage() {
@@ -159,7 +165,7 @@ public class Bruker {
 
 	/**
 	 * determine the data is reconstructed correctly or not
-	 * 
+	 *
 	 * @return
 	 */
 	public boolean isDataValid() {
@@ -168,25 +174,37 @@ public class Bruker {
 
 	/**
 	 * the main method of api which gets data of the dataset
-	 * 
+	 *
 	 * @return a DataBruker Object
 	 */
 	public DataBruker getData() {
-
+	if(data == null) {
 		if (isRaw()) {
 			JcampdxData acqp = jcampdx.getAcqp();
 			JcampdxData method = jcampdx.getMethod();
-			ident_ACQS_TYPE();
 			data = read_fid(acqp, method);
 		}
 		if (!isRaw()) {
 			JcampdxData visu_pars = jcampdx.getVisu_pars();
 			JcampdxData reco = jcampdx.getReco();
-			ident_ACQS_TYPE();
 //			Object FG_TYPES = visu_pars.get("VisuFGOrderDesc");
 			data = read_2dseq(visu_pars, reco);
+
 		}
-		return new DataBruker(data);
+	}
+		return new DataBruker(this);
+	}
+
+	public long[] getCplxDims() {
+		long[] cplxshape = null;
+		if (data != null) {
+			if (!isRaw()) {
+				cplxshape = data.get(0).shape();
+			} else if (isRaw()) {
+					logger.error("the data is not complex");
+			}
+		}
+		return cplxshape;
 	}
 
 	public long[] getDims() {
@@ -200,7 +218,6 @@ public class Bruker {
 					logger.error("mismatch shapes {} = {}", imagShape, realshape);
 			} else if (!isRaw()) {
 				long[] dims = data.get(0).shape();
-				;
 				if (dims.length == 5) {
 					realshape = data.get(0).get(NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.all(),
 							NDArrayIndex.all(), NDArrayIndex.point(0)).shape();
@@ -240,7 +257,7 @@ public class Bruker {
 
 	/**
 	 * Scan the directory of study and list all files
-	 * 
+	 *
 	 * @param path : a path to study directory
 	 * @return a List array of Objects
 	 */
@@ -257,7 +274,7 @@ public class Bruker {
 
 	/**
 	 * get acquisition type
-	 * 
+	 *
 	 * @return a string of the acquisition type
 	 */
 	public String getACQS_TYPE() {
@@ -266,7 +283,7 @@ public class Bruker {
 
 	/**
 	 * set acquisition type externally
-	 * 
+	 *
 	 * @param aCQS_TYPE
 	 */
 	public void setACQS_TYPE(String aCQS_TYPE) {
@@ -275,7 +292,7 @@ public class Bruker {
 
 	/**
 	 * read 2dseq file and then reshape & scale and form the frame group
-	 * 
+	 *
 	 * @param visu_pars a JcampdxData Object which contains a map of parameters of
 	 *                  visu_pars
 	 * @param reco      a JcampdxData Object which contains a map of parameters of
@@ -299,7 +316,7 @@ public class Bruker {
 
 	/**
 	 * read 2dseq binary file
-	 * 
+	 *
 	 * @param visu_pars a JcampdxData Object which contains a map of parameters of
 	 *                  visu_pars
 	 * @param reco      a JcampdxData Object which contains a map of parameters of
@@ -330,10 +347,12 @@ public class Bruker {
 		INDArray VisuCoreSize = visu_pars.getINDArray("VisuCoreSize");
 		int VisuCoreFrameCount = visu_pars.getInt("VisuCoreFrameCount");
 		INDArray real = Nd4j.zeros(ArrBD.size());
-		INDArray imag = Nd4j.zeros(ArrBD.size());
+//		INDArray imag = Nd4j.zeros(ArrBD.size());
 		for (int i = 0; i < ArrBD.size(); i++) {
 			real.putScalar(i, (Integer) ArrBD.get(i));
 		}
+		ArrBD = null;
+		System.gc();
 		int[] reshape_scheme = new int[(int) (VisuCoreSize.length() + 1)];
 		for (int i = 0; i < VisuCoreSize.length(); i++) {
 			reshape_scheme[i] = VisuCoreSize.getInt(i);
@@ -342,13 +361,13 @@ public class Bruker {
 		real = real.reshape('f', reshape_scheme);
 		ArrayList<INDArray> data_array = new ArrayList<INDArray>();
 		data_array.add(real);
-		data_array.add(imag);
+//		data_array.add(imag);
 		return data_array;
 	}
 
 	/**
 	 * Scale data
-	 * 
+	 *
 	 * @param data_array
 	 * @param visu_pars
 	 * @param reco
@@ -382,14 +401,14 @@ public class Bruker {
 
 	/**
 	 * Form frame group of data
-	 * 
+	 *
 	 * @param data_array
 	 * @param visu_pars  : a JcampdxData Object
 	 * @param reco       : a JcampdxData Object
 	 * @return an ArrayList of INDArray Objects
 	 */
 	private ArrayList<INDArray> form_frame_groups(ArrayList<INDArray> data_array, JcampdxData visu_pars,
-			JcampdxData reco) {
+												  JcampdxData reco) {
 		// TODO Auto-generated method stub
 		ArrayList VisuFGOrderDesc = visu_pars.getArrayList("VisuFGOrderDesc");
 		int VisuFGOrderDescDim = 0;
@@ -418,6 +437,7 @@ public class Bruker {
 			reshape_scheme[i] = fg_dims[(int) (i - VisuCoreSize.length())];
 		}
 		data_array.get(0).reshape('f', reshape_scheme);
+		data_array.add(data_array.get(0).dup());
 		return data_array;
 	}
 
@@ -432,7 +452,7 @@ public class Bruker {
 		}
 
 		data_array = reshape_fid(ArrBD, acqp, method);
-
+        System.out.println("check point 1");
 		if (ACQ_dim == 2) {
 			data_array = reorder_fid_lines_2d(data_array, acqp, method);
 			data_array = reorder_fid_frames_2d(data_array, acqp, method);
@@ -454,14 +474,14 @@ public class Bruker {
 
 	/**
 	 * reorder frames of fid file
-	 * 
+	 *
 	 * @param data_array
 	 * @param acqp
 	 * @param method
 	 * @return an ArrayList of INDArray Objects
 	 */
 	public ArrayList<INDArray> reorder_fid_frames_2d(ArrayList<INDArray> data_array, JcampdxData acqp,
-			JcampdxData method) {
+													 JcampdxData method) {
 
 		INDArray PVM_ObjOrderList_IndArr = method.getINDArray("PVM_ObjOrderList");
 		int[] PVM_ObjOrderList = PVM_ObjOrderList_IndArr.data().asInt();
@@ -505,14 +525,14 @@ public class Bruker {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param data_array
 	 * @param acqp       : a JcampdxData Object
 	 * @param method     : a JcampdxData Object
 	 * @return an ArrayList of INDArray Objects
 	 */
 	public ArrayList<INDArray> reorder_fid_lines_2d(ArrayList<INDArray> data_array, JcampdxData acqp,
-			JcampdxData method) {
+													JcampdxData method) {
 
 		int PVM_EncNReceivers = method.getInt("PVM_EncNReceivers");
 		INDArray PVM_EncSteps1 = method.getINDArray("PVM_EncSteps1");
@@ -543,7 +563,7 @@ public class Bruker {
 
 	/**
 	 * reshape fid file
-	 * 
+	 *
 	 * @param ArrBD
 	 * @param acqp   : a JcampdxData Object
 	 * @param method : a JcampdxData Object
@@ -556,6 +576,8 @@ public class Bruker {
 			real.putScalar(i / 2, Double.valueOf(ArrBD.get(i).toString()));
 			imag.putScalar(i / 2, Double.valueOf(ArrBD.get(i + 1).toString()));
 		}
+		ArrBD = null;
+		System.gc();
 		get_reorder_schemes_fid(acqp, method);
 		long[] fid_dims = imag.shape();
 		if (fid_dims[0] != product(reshape_scheme_1)) {
@@ -586,7 +608,7 @@ public class Bruker {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param acqp : a JcampdxData Object
 	 * @return
 	 */
@@ -603,7 +625,7 @@ public class Bruker {
 
 	/**
 	 * reorder fid matrix
-	 * 
+	 *
 	 * @param acqp   : a JcampdxData Object
 	 * @param method : a JcampdxData Object
 	 */
@@ -680,7 +702,7 @@ public class Bruker {
 
 	/**
 	 * read fid file
-	 * 
+	 *
 	 * @param acqp   : a JcampdxData Object
 	 * @param method : a JcampdxData Object
 	 * @return
@@ -717,7 +739,7 @@ public class Bruker {
 
 	/**
 	 * convert fid binary file to decimal
-	 * 
+	 *
 	 * @param buffReader
 	 * @param arg1       byte format
 	 * @param arg2       byte order
@@ -758,8 +780,8 @@ public class Bruker {
 
 	/**
 	 * convert binary to 32-bit Integer format in little Indian order
-	 * 
-	 * @param DataInputStream Object of buffReader binary buffer
+	 *
+	 * @para DataInputStream Object of buffReader binary buffer
 	 * @return
 	 * @throws EOFException
 	 * @throws IOException
@@ -781,7 +803,7 @@ public class Bruker {
 
 	/**
 	 * convert binary to 32-bit Integer format in big Indian order
-	 * 
+	 *
 	 * @param buffReader
 	 * @return
 	 * @throws IOException
@@ -797,7 +819,7 @@ public class Bruker {
 
 	/**
 	 * convert binary to 16-bit Integer format in little Indian order
-	 * 
+	 *
 	 * @param buffReader
 	 * @return
 	 * @throws EOFException
@@ -818,7 +840,7 @@ public class Bruker {
 
 	/**
 	 * convert binary to 16-bit Integer format in big Indian order
-	 * 
+	 *
 	 * @param buffReader
 	 * @return
 	 * @throws EOFException
@@ -839,7 +861,7 @@ public class Bruker {
 
 	/**
 	 * convert binary to Float format in little Indian order
-	 * 
+	 *
 	 * @param buffReader
 	 * @return
 	 * @throws IOException
@@ -861,7 +883,7 @@ public class Bruker {
 
 	/**
 	 * convert binary to Float format in big Indian order
-	 * 
+	 *
 	 * @param buffReader
 	 * @return
 	 * @throws IOException
@@ -877,7 +899,7 @@ public class Bruker {
 
 	/**
 	 * convert binary to Double format in little Indian order
-	 * 
+	 *
 	 * @param buffReader
 	 * @return
 	 * @throws IOException
@@ -904,7 +926,7 @@ public class Bruker {
 
 	/**
 	 * convert binary to Double format in big Indian order
-	 * 
+	 *
 	 * @param buffReader
 	 * @return
 	 * @throws IOException
