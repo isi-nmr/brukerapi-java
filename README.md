@@ -107,3 +107,11 @@ In the following there are some examples of getting parameters:
     	float[][] gradMatVoi = bruker.getJcampdx().getMethod().getGradMatrixVoi(0, gradMatrix);
 
 For further information, see the JAVA document of the library. 
+Development of Java code was supported by:
+  
+- European Union's Horizon 2020 research and innovation program under the Marie Sklodowska-Curie grant agreement No 813120 (INSPiRE-MED)
+
+
+Python, Matlab by
+
+- Ministry of Education, Youth and Sports of the Czech Republic CZ.02.1.01/0.0/0.0/16_013/0001775
