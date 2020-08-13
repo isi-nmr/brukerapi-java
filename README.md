@@ -1,5 +1,5 @@
 
-**JBruker (JAVA API for Bruker Datasets)**
+**JBruker (JAVA API for Bruker Datasets)**  
 *A JAVA package providing I/O interface for Bruker data sets*  
 >download library from maven:https://search.maven.org/remotecontent?filepath=com/github/isi-nmr/JBruker/1.0.0/JBruker-1.0.0.jar  
 >javadoc : https://javadoc.io/doc/com.github.isi-nmr/JBruker/1.0.1  
