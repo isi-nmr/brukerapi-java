@@ -118,7 +118,7 @@ public class Jcampdx {
 	 */
 	public Jcampdx(Bruker bruker) {
 		this.bruker = bruker;
-		Path pathL = bruker.getPath();
+		Path pathL = bruker.getConditions().getPath();
 //		path_fid = path_2dseq.getParent().getParent();
 
 		if (pathL.getFileName().toString().contentEquals("2dseq")) {
@@ -265,15 +265,15 @@ public class Jcampdx {
 		if (value_string.startsWith("<")) {
 			I_size_list[I_size_list.length] = 1;
 		}
-
+		data_string = data_string.replaceAll(" ", "");
 		List<Object> values = new ArrayList<Object>();
 		for (int i = 0; i < I_size_list[0]; i++) {
-			int position = data_string.indexOf(") (");
+			int position = data_string.indexOf(")(");
 			String data_frac = null;
 			if (!data_string.contentEquals("")) {
 				if (position > 0) {
 					data_frac = data_string.substring(1, position);
-				} else {
+				} else {			
 					data_frac = data_string.substring(1, data_string.length() - 1);
 				}
 				data_frac = data_frac.replaceAll(" ", "");
@@ -341,8 +341,8 @@ public class Jcampdx {
 					String[] splited2 = s.split("=");
 					a = splited2[0];
 					b = splited2[1];
-					if(a.contains("VisuFGOrderDesc"))
-						System.out.println("found it");
+//					if(a.contains("VisuFGOrderDesc"))
+//						System.out.println("found it");
 					aMap.put(a, proc_entry(b.replaceFirst("\\s++$", "")));
 				}
 			}

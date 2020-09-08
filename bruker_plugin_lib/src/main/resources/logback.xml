@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <configuration>
 
-    <appender name="STDOUT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="STDOUT" class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
         <file>logFile.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 
@@ -20,7 +20,7 @@
         </encoder>
     </appender>
     <logger name="BrukerConvertor" level="DEBUG"/>
-    <logger name="Bruker" level="INFO"/>
+    <logger name="Bruker" level="INFO"></logger>
     <logger name="Jcampdx" level="INFO"></logger>
     <root level="debug">
         <appender-ref ref="STDOUT" />

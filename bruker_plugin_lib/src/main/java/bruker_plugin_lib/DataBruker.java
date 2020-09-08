@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 public class DataBruker extends ArrayList<INDArray> {
 	private ArrayList<INDArray> data;
-	private INDArray real, imag;
+	public INDArray real, imag;
 	private float[] realData;
 	private float[] imagData;
 	Bruker bruker;
@@ -20,6 +20,7 @@ public class DataBruker extends ArrayList<INDArray> {
 		this.bruker = bruker;
 		this.data = bruker.data;
 		this.real = data.get(0);
+		if (bruker.isRaw())
 		this.imag = data.get(1);
 	}
 
@@ -45,12 +46,22 @@ public class DataBruker extends ArrayList<INDArray> {
 				int size = (int) real.length();
 				// INDArray dup_imag =
 				// imag.reshape(imag.vectorsAlongDimension(0)*dims[0]).dup();
-				float[] m_absorptionChannelTDraw = new float[size];
 				for (int i = 0; i < real.vectorsAlongDimension(dim); i++) {
-					float[] re = real.vectorAlongDimension((int) i, dim).toFloatVector();
-					System.arraycopy(re, 0, m_absorptionChannelTDraw, (int) (i * dims[0]), (int) dims[0]);
+					switch (bruker.getParameters().dataType) {
+//					case DOUBLE:
+//						Object m_absorptionChannelTDraw_double = new double[size];
+//						double[] re_double = real.vectorAlongDimension((int) i, dim).toDoubleVector();
+//						System.arraycopy(re_double, 0, m_absorptionChannelTDraw_double, (int) (i * dims[0]), (int) dims[0]);
+//						return m_absorptionChannelTDraw_double;
+					default:
+						float[] m_absorptionChannelTDraw_float = new float[size];
+						float[] re_float = real.vectorAlongDimension((int) i, dim).toFloatVector();
+						System.arraycopy(re_float, 0, m_absorptionChannelTDraw_float, (int) (i * dims[0]), (int) dims[0]);
+						return m_absorptionChannelTDraw_float;
+					}
+					
 				}
-				return m_absorptionChannelTDraw;
+				
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -63,10 +74,10 @@ public class DataBruker extends ArrayList<INDArray> {
 					real = real.get(NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.point(0));
 				}
 				if (dims.length == 4) {
-					real = real.get(NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.point(0));
+					real = real.get(NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.point(dim));
 				}
 				if (dims.length == 3) {
-					real = real.get(NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.point(0));
+					real = real.get(NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.point(dim));
 				}
 				if (dims.length == 2) {
 					return null;
@@ -84,6 +95,7 @@ public class DataBruker extends ArrayList<INDArray> {
 				return null;
 			}
 		}
+		return null;
 	}
 
 	public void setRealData(float[] realData) {
@@ -98,10 +110,14 @@ public class DataBruker extends ArrayList<INDArray> {
 	 * return imaginary data
 	 * @return
 	 */
-	public float[] getImagData() {
+	public Object getImagData() {
+		if(bruker.isRaw()) {
 		int dim = 0;
-		float[] m_absorptionChannelTDraw = getImagData(dim);
-		return m_absorptionChannelTDraw;
+		Object m_absorptionChannelTDraw = getImagData(dim);
+		return m_absorptionChannelTDraw; 
+		} else {
+			return null;
+		}
 	}
 
 	/**
@@ -116,12 +132,23 @@ public class DataBruker extends ArrayList<INDArray> {
 				int size = (int) imag.length();
 				// INDArray dup_imag =
 				// imag.reshape(imag.vectorsAlongDimension(0)*dims[0]).dup();
-				float[] m_absorptionChannelTDraw = new float[size];
+//				float[] m_absorptionChannelTDraw = new float[size];
 				for (int i = 0; i < imag.vectorsAlongDimension(dim); i++) {
-					float[] re = imag.vectorAlongDimension((int) i, dim).toFloatVector();
-					System.arraycopy(re, 0, m_absorptionChannelTDraw, (int) (i * dims[0]), (int) dims[0]);
+					switch (bruker.getParameters().dataType) {
+//					case DOUBLE:
+//						Object m_disportionChannelTDraw_double = new double[size];
+//						double[] im_double = imag.vectorAlongDimension((int) i, dim).toDoubleVector();
+//						System.arraycopy(im_double, 0, m_disportionChannelTDraw_double, (int) (i * dims[0]), (int) dims[0]);
+//						return m_disportionChannelTDraw_double;
+					default:
+						float[] m_disportionChannelTDraw_float = new float[size];
+						float[] re_float = real.vectorAlongDimension((int) i, dim).toFloatVector();
+						System.arraycopy(re_float, 0, m_disportionChannelTDraw_float, (int) (i * dims[0]), (int) dims[0]);
+						return m_disportionChannelTDraw_float;
+					}
+					
 				}
-				return m_absorptionChannelTDraw;
+
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -155,6 +182,7 @@ public class DataBruker extends ArrayList<INDArray> {
 				return null;
 			}
 		}
+		return null;
 	}
 
 	/**

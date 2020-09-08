@@ -9,58 +9,81 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 
+import javax.sound.midi.Soundbank;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
+import org.nd4j.linalg.indexing.INDArrayIndex;
+import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.gson.Gson;
-
 
 public class BrukerConvertor {
 	private static JSONObject test_data_meta;
 	private String path;
-	
+
 	public BrukerConvertor(String path) {
 		super();
 		this.path = path;
 		Scan scan = new Scan("D:/T drive/data/bruker/CSI/Mouse/28/");
 	}
-	
 
-public static void main(String[] args) throws EOFException, IOException {
-	Logger logger = LoggerFactory.getLogger(BrukerConvertor.class);
-	String fs_prefix = "D:\\DATA SETs\\" ;
-	String json = "C:\\Users\\Amir Shamaei\\Downloads\\bruker-python-dev\\tests\\test-data.json";
-	JSONParser jsonParser = new JSONParser();
-	String dataset_id = "FID_18";
-	try (FileReader reader = new FileReader(json))
-    {
-		try {
-			JSONObject jsonobject = (JSONObject) jsonParser.parse(reader);
-			test_data_meta = (JSONObject) jsonobject.get(dataset_id);			
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
+	public static void main(String[] args) throws EOFException, IOException {
+		Logger logger = LoggerFactory.getLogger(BrukerConvertor.class);
+		String fs_prefix = "D:\\DATA SETs\\";
+		String json = "fid_schemes.json";
+		JSONParser jsonParser = new JSONParser();
+		try (FileReader reader = new FileReader(json)) {
+			try {
+				JSONObject jsonobject = (JSONObject) jsonParser.parse(reader);
+//			test_data_meta = (JSONObject) jsonobject.get(dataset_id);			
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-    } catch ( FileNotFoundException e) {
-    	e.printStackTrace();
-    }
-	String dataset_path = fs_prefix + test_data_meta.get("path");
-	String ACQS_TYPE = (String) test_data_meta.get("acq_type");
-	Bruker bruker = new Bruker();
-	bruker.setPath(Paths.get("D:\\DATA SETs\\from jana\\Cristina\\20200313_112746_phantom_rat_13032020_phantom_rat_test_13032020_1_1_Jana\\35\\fid"));
-	bruker.isImage();
-//	bruker.setACQS_TYPE("CSI");
 		
+		
+
+		
+
+
+			
+//		  ArrayList<int[]> mat = indices(new int[] {2, 3, 2, 1, 3}, 1, 4);
+	
+		
+//		
+
+//		  String dataset_path = fs_prefix + test_data_meta.get("path"); 
+//		  String ACQS_TYPE = (String) test_data_meta.get("acq_type"); 
+		  long startTime = System.nanoTime();
+		  Bruker bruker = new Bruker(); 
+		  bruker.setPath(Paths.get("D:\\DATA SETs\\for test Jbruker\\0.2H2\\0.2H2\\7\\fid")); 
+		  bruker.isImage(); // bruker.setACQS_TYPE("CSI");
 		  DataBruker data = bruker.getData(); 
-		  float[] realdata = data.getRealData();
-		  float[] imagdata = data.getImagData();
-		 System.out.println("finished");
+		  long endTime = System.nanoTime();
+		  System.out.println((endTime - startTime)/1000000);
+		  startTime = System.nanoTime();
+		   double[] a = data.real.data().asDouble();
+		  endTime = System.nanoTime();
+		  System.out.println((endTime - startTime)/1000000);
+		  startTime = System.nanoTime();
+		  Object realdata = data.getRealData();
+		  endTime = System.nanoTime();
+		  System.out.println((endTime - startTime)/1000000);
+		
+		
+		
+		
+//		  float[] imagdata = data.getImagData(); 
+		  System.out.println("finished");
+		 
 //	bruker.getPath();
 		/*
 		 * JcampdxData acqp = bruker.getJcampdx().getAcqp(); boolean iskspace =
@@ -81,21 +104,19 @@ public static void main(String[] args) throws EOFException, IOException {
 		 * bruker.getJcampdx().getMethod().getGradMatrixVoi(0, gradMatrix);
 		 */
 //	bruker.getJcampdx().getMethod().getGradMatrix(dim, defGradMatrix)
-	
+
 //	DataBruker dataBruker = new DataBruker(data);
-	logger.debug("succesfull");
-	
-	
-	
+		logger.debug("succesfull");
+
 		/*
 		 * Reco reco = new Reco("D:\\DATA SETs\\Data for test spectIm\\7\\pdata\\1\\");
 		 * //scan.initialize(); float[] real = reco.getRealData(0); float[] imag =
 		 * reco.getImagData(0);
 		 */
-	
+
 //	
-	Scan scan = new Scan("D:\\DATA SETs\\Data for test spectIm\\20200122_101204_phantom_orientation_1_1\\7\\");
-    //scan.initialize();
+		Scan scan = new Scan("D:\\DATA SETs\\Data for test spectIm\\20200122_101204_phantom_orientation_1_1\\7\\");
+		// scan.initialize();
 //	float[] real = scan.getRealData(0);
 //	float[] imag = scan.getImagData(0);
 ////	//INDArray b = (INDArray) a[0];
@@ -141,13 +162,19 @@ public static void main(String[] args) throws EOFException, IOException {
 //	
 ////	System.out.println(visufgo);
 //    //System.out.println(PV);
-	
-	
-	
-	
-	
-	
-}
 
+	}
+	/**
+	 * jsbckjsdcj,msd ckjsdhcusnc scnsjlcsoudc
+	 * @return result
+	 */
+	static int product(int ar[]) {
+		int result = 1;
+		for (int i = 0; i < ar.length; i++)
+			result = result * ar[i];
+		return result;
+	}
+	
+	
 
 }

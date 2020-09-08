@@ -1,7 +1,14 @@
 package bruker_plugin_lib;
 
 import com.google.common.primitives.Ints;
+
+import checkers.units.quals.Length;
+
+import org.apache.commons.lang3.ArrayUtils;
+import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.cpu.nativecpu.NDArray;
+import org.nd4j.linalg.exception.ND4JArraySizeException;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.INDArrayIndex;
 import org.nd4j.linalg.indexing.NDArrayIndex;
@@ -10,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -21,18 +29,29 @@ import java.util.stream.Stream;
 
 public class Bruker {
 	private Logger logger = LoggerFactory.getLogger(Bruker.class);
-	private String[] SUPPORTED_DATA_FILE_TYPES = new String[] { "fid", "2dseq", "1i", "1r" };
-
-	Jcampdx jcampdx;
-	private Path path;
+	private String[] SUPPORTED_DATA_FILE_TYPES = new String[] { "fid", "2dseq", "1i", "1r", "ser" };
+	private Parameters parameters;
+	private Jcampdx jcampdx;
+	private Conditions conditions;
 	public ArrayList<INDArray> data;
-	private String ACQS_TYPE;
 	private int[] reshape_scheme_1;
 	private int[] reshape_scheme_2;
 	private int[] permute_scheme_1;
 	private int[] reshape_scheme;
 	private int[] permute_scheme;
-	private List<Object> dir_rslt;
+	
+	
+	public Parameters getParameters() {
+		return parameters;
+	}
+	
+	public void setParameters(Parameters parameters) {
+		this.parameters = parameters;
+	}
+
+	public Conditions getConditions() {
+		return conditions;
+	}
 
 	public Jcampdx getJcampdx() {
 		return jcampdx;
@@ -67,12 +86,9 @@ public class Bruker {
 	}
 
 	public Bruker() {
-
+		this.conditions = new Conditions(this);
 	}
 
-	public Path getPath() {
-		return path;
-	}
 
 	/**
 	 * set study path
@@ -80,79 +96,15 @@ public class Bruker {
 	 * @param path
 	 */
 	public void setPath(Path path) {
-		this.path = path;
-		dir_rslt = scan_dir(path.getParent());
-		logger.info("({}) is set tht path", path);
-		String filename = path.getFileName().toString();
-		if (Arrays.stream(SUPPORTED_DATA_FILE_TYPES).anyMatch(filename::equals)) {
-			logger.info("File {} is a supported Bruker data type", filename);
+		conditions.setPath(path);
+		logger.info("({}) is set tht path", path);		
+		if (Arrays.stream(SUPPORTED_DATA_FILE_TYPES).anyMatch(conditions.getFilename()::equals)) {
+			logger.info("File {} is a supported Bruker data type", conditions.getFilename());
 		} else {
-			logger.error("File {} is not a supported Bruker data type", filename);
+			logger.error("File {} is not a supported Bruker data type", conditions.getFilename());
 		}
-		jcampdx = new Jcampdx(this);
-		ident_ACQS_TYPE();
 	}
 
-	/**
-	 * identify acquisition type of data set
-	 */
-	private void ident_ACQS_TYPE() {
-		Integer ACQ_dim = jcampdx.getAcqp().getInt("ACQ_dim");
-		Integer NPro;
-		Integer NECHOES;
-		String CSISignalType;
-		try {
-			NPro = jcampdx.getMethod().getInt("NPro");
-		} catch (Exception e) {
-			NPro = null;
-		}
-		try {
-			NECHOES = jcampdx.getAcqp().getInt("NECHOES");
-		} catch (Exception e) {
-			NECHOES = null;
-		}
-		try {
-			CSISignalType = (String) jcampdx.getMethod().getString("CSISignalType");
-		} catch (Exception e) {
-			CSISignalType = null;
-		}
-		if (CSISignalType == null) {
-			ArrayList<String> ACQ_dim_desc = jcampdx.getAcqp().getArrayList("ACQ_dim_desc");
-			if (ACQ_dim_desc.equals(Arrays.asList((new String[] { "Spectroscopic", "Spatial", "Spatial" })))) {
-				ACQS_TYPE = "CSI";
-				setACQS_TYPE(ACQS_TYPE);
-				return;
-			}
-			if (ACQ_dim_desc.equals(Arrays.asList((new String[] { "Spectroscopic", "Spectroscopic" })))) {
-				ACQS_TYPE = "UNKNOWN";
-				setACQS_TYPE(ACQS_TYPE);
-			}
-
-		}
-		String ACQS_TYPE;
-		if (NPro != null && ACQ_dim == 2) {
-			ACQS_TYPE = "RADIAL_2D";
-			setACQS_TYPE(ACQS_TYPE);
-			return;
-		} else if (NPro != null && ACQ_dim == 3) {
-			ACQS_TYPE = "RADIAL_3D";
-			setACQS_TYPE(ACQS_TYPE);
-			return;
-		} else if (CSISignalType != null) {
-			ACQS_TYPE = "CSI";
-			setACQS_TYPE(ACQS_TYPE);
-			return;
-		} else if (ACQ_dim == 3) {
-			ACQS_TYPE = "CART_3D";
-			setACQS_TYPE(ACQS_TYPE);
-			return;
-		} else {
-			ACQS_TYPE = "CART_2D";
-			setACQS_TYPE(ACQS_TYPE);
-			return;
-		}
-
-	}
 
 	/**
 	 * determine the datset contains image data or not
@@ -160,7 +112,7 @@ public class Bruker {
 	 * @return
 	 */
 	public Boolean isImage() {
-		return !getACQS_TYPE().contentEquals("CSI");
+		return !conditions.getACQS_TYPE().equals(ACQ_TYPE.CSI);
 	}
 
 	/**
@@ -180,16 +132,10 @@ public class Bruker {
 	public DataBruker getData() {
 	if(data == null) {
 		if (isRaw()) {
-			JcampdxData acqp = jcampdx.getAcqp();
-			JcampdxData method = jcampdx.getMethod();
-			data = read_fid(acqp, method);
+			data = read_fid();
 		}
 		if (!isRaw()) {
-			JcampdxData visu_pars = jcampdx.getVisu_pars();
-			JcampdxData reco = jcampdx.getReco();
-//			Object FG_TYPES = visu_pars.get("VisuFGOrderDesc");
-			data = read_2dseq(visu_pars, reco);
-
+			data = read_2dseq();
 		}
 	}
 		return new DataBruker(this);
@@ -242,10 +188,11 @@ public class Bruker {
 
 	public Boolean isRaw() {
 		boolean rawFlag = false;
-		if (dir_rslt.contains("acqp") && dir_rslt.contains("method") && path.getFileName().toString().contains("fid")) {
+		if (getConditions().getFiles().contains("acqp") && getConditions().getFiles().contains("method") && 
+					(getConditions().getFilename().toString().contains("fid") || getConditions().getFilename().toString().contains("ser"))) {
 			rawFlag = true;
-		} else if (dir_rslt.contains("visu_pars") && dir_rslt.contains("reco")
-				&& path.getFileName().toString().contains("2dseq")) {
+		} else if (getConditions().getFiles().contains("visu_pars") && getConditions().getFiles().contains("reco")
+				&& getConditions().getFilename().toString().contains("2dseq")) {
 			rawFlag = false;
 		}
 		return rawFlag;
@@ -255,40 +202,25 @@ public class Bruker {
 		this.data = data;
 	}
 
-	/**
-	 * Scan the directory of study and list all files
-	 *
-	 * @param path : a path to study directory
-	 * @return a List array of Objects
-	 */
-	private List<Object> scan_dir(Path path) {
-		List<Object> list_scan_result = null;
-		try (Stream<Path> walk = Files.walk(path)) {
-			list_scan_result = walk.filter(Files::isRegularFile).map(x -> x.getFileName().toString())
-					.collect(Collectors.toList());
-		} catch (IOException e) {
-			logger.error("Bruker is not able to scan directory {}", path);
-		}
-		return list_scan_result;
-	}
 
-	/**
-	 * get acquisition type
-	 *
-	 * @return a string of the acquisition type
-	 */
-	public String getACQS_TYPE() {
-		return ACQS_TYPE;
-	}
 
-	/**
-	 * set acquisition type externally
-	 *
-	 * @param aCQS_TYPE
-	 */
-	public void setACQS_TYPE(String aCQS_TYPE) {
-		ACQS_TYPE = aCQS_TYPE;
-	}
+//	/**
+//	 * get acquisition type
+//	 *
+//	 * @return a string of the acquisition type
+//	 */
+//	public String getACQS_TYPE() {
+//		return ACQS_TYPE;
+//	}
+//
+//	/**
+//	 * set acquisition type externally
+//	 *
+//	 * @param aCQS_TYPE
+//	 */
+//	public void setACQS_TYPE(String aCQS_TYPE) {
+//		ACQS_TYPE = aCQS_TYPE;
+//	}
 
 	/**
 	 * read 2dseq file and then reshape & scale and form the frame group
@@ -299,19 +231,21 @@ public class Bruker {
 	 *                  reco
 	 * @return an ArrayList of INDArray Objects
 	 */
-	private ArrayList<INDArray> read_2dseq(JcampdxData visu_pars, JcampdxData reco) {
-		ArrayList<Object> ArrBD = new ArrayList<>();
-		ArrayList<INDArray> data_array = new ArrayList<INDArray>();
+	private ArrayList<INDArray> read_2dseq() {
+		Object ArrBD = new Object();
+		INDArray data_array;
 		try {
-			ArrBD = read_2dseq_file(visu_pars, reco);
+			ArrBD = read_2dseq_file();
 		} catch (IOException e) {
 			logger.error("There is a problem with reading the 2dseq file");
 		}
-		data_array = reshape_2dseq(ArrBD, visu_pars, reco);
-		data_array = scale(data_array, visu_pars, reco);
-		data_array = form_frame_groups(data_array, visu_pars, reco);
+		data_array = reshape_2dseq(ArrBD);
+		data_array = scale(data_array);
+		data_array = form_frame_groups(data_array);
 //		form_complex();
-		return data_array;
+		ArrayList<INDArray> arraylist = new ArrayList<INDArray>();
+		arraylist.add(data_array);
+		return arraylist ;
 	}
 
 	/**
@@ -325,44 +259,46 @@ public class Bruker {
 	 * @throws EOFException
 	 * @throws IOException
 	 */
-	private ArrayList<Object> read_2dseq_file(JcampdxData visu_pars, JcampdxData reco)
+	private Object read_2dseq_file()
 			throws EOFException, IOException {
-		FileInputStream dataStream = new FileInputStream(path.toString());
+		FileInputStream dataStream = new FileInputStream(conditions.getPath().toString());
 		DataInputStream dataFilter = new DataInputStream(dataStream);
 		DataInputStream buffReader = new DataInputStream(new BufferedInputStream(dataFilter));
-		String VisuCoreWordType = null;
-		String VisuCoreByteOrder = null;
-		try {
-			VisuCoreWordType = visu_pars.getString("VisuCoreWordType");
-			VisuCoreByteOrder = visu_pars.getString("VisuCoreByteOrder");
-		} catch (Exception e) {
-			System.out.println("Parameters missing: VisuCoreByteOrder, or VisuCoreByteOrder");
-		}
-		ArrayList<Object> ArrBD = dtype(buffReader, VisuCoreWordType, VisuCoreByteOrder);
+		Object ArrBD = dtype(buffReader, parameters.VisuCoreWordType, parameters.VisuCoreByteOrder);
 		return ArrBD;
 	}
 
-	private ArrayList<INDArray> reshape_2dseq(ArrayList<Object> ArrBD, JcampdxData visu_pars, JcampdxData reco) {
+	private INDArray reshape_2dseq(Object ArrBD) {
 		// TODO Auto-generated method stub
-		INDArray VisuCoreSize = visu_pars.getINDArray("VisuCoreSize");
-		int VisuCoreFrameCount = visu_pars.getInt("VisuCoreFrameCount");
-		INDArray real = Nd4j.zeros(ArrBD.size());
-//		INDArray imag = Nd4j.zeros(ArrBD.size());
-		for (int i = 0; i < ArrBD.size(); i++) {
-			real.putScalar(i, (Integer) ArrBD.get(i));
+
+//		INDArray real = Nd4j.zeros(ArrBD.size());
+////		INDArray imag = Nd4j.zeros(ArrBD.size());
+//		for (int i = 0; i < ArrBD.size(); i++) {
+//			real.putScalar(i, (Integer) ArrBD.get(i));
+//		}
+		
+		INDArray data = null;
+		switch (parameters.dataType) {
+		case DOUBLE:
+			data = Nd4j.create((double[]) ArrBD, new long[] {getConditions().getBinarySize()} , DataType.FLOAT);
+			break;
+		case INTEGER:
+			data = Nd4j.create((int[]) ArrBD, new long[] {getConditions().getBinarySize()} , DataType.FLOAT);
+			break;
+		case FLOAT:
+			data = Nd4j.createFromArray((float[]) ArrBD);
+			break;
+		default:
+			break;
 		}
+		
 		ArrBD = null;
 		System.gc();
-		int[] reshape_scheme = new int[(int) (VisuCoreSize.length() + 1)];
-		for (int i = 0; i < VisuCoreSize.length(); i++) {
-			reshape_scheme[i] = VisuCoreSize.getInt(i);
-		}
-		reshape_scheme[(int) (VisuCoreSize.length())] = VisuCoreFrameCount;
-		real = real.reshape('f', reshape_scheme);
-		ArrayList<INDArray> data_array = new ArrayList<INDArray>();
-		data_array.add(real);
-//		data_array.add(imag);
-		return data_array;
+		
+		
+		data = data.reshape('f', getConditions().reshape_scheme_2dseq);
+		
+		return data;
 	}
 
 	/**
@@ -373,29 +309,28 @@ public class Bruker {
 	 * @param reco
 	 * @return an ArrayList of INDArray Objects
 	 */
-	private ArrayList<INDArray> scale(ArrayList<INDArray> data_array, JcampdxData visu_pars, JcampdxData reco) {
-		// TODO Auto-generated method stub
-		INDArray VisuCoreDataSlope = visu_pars.getINDArray("VisuCoreDataSlope");
-//		Object VisuCoreDataOffs = visu_pars.get("VisuCoreDataOffs)");
-		int VisuCoreFrameCount = visu_pars.getInt("VisuCoreFrameCount");
-		int VisuCoreDim = visu_pars.getInt("VisuCoreDim");
-		long[] fid_dims = data_array.get(0).shape();
-		for (int i = 0; i < VisuCoreFrameCount; i++) {
-			if (VisuCoreDim == 1) {
-				data_array.get(0).getColumn(i).add(VisuCoreDataSlope.getFloat(i));
-			} else if (VisuCoreDim == 2) {
-				for (int j = 0; j < fid_dims[2]; j++) {
+	private INDArray scale(INDArray data_array) {
+		// TODO check scaling must be done or not
+		Parameters p = getParameters();
+		long[] shape = data_array.shape();
+//		for (int i = 0; i < p.VisuCoreFrameCount; i++) {
+			if (p.VisuCoreDim == 1) {
+				data_array.getColumn(0).mul(p.VisuCoreDataSlope.getFloat(0));
+				data_array.getColumn(0).add(p.VisuCoreDataOffs.getFloat(0));
+			} else if (p.VisuCoreDim == 2) {
+				for (int j = 0; j < shape[2]; j++) {
 					INDArrayIndex[] indx = { NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.point(j) };
-					data_array.get(0).get(indx).add(VisuCoreDataSlope.getFloat(i));
+					data_array.get(indx).muli(p.VisuCoreDataSlope.getFloat(j));
+					data_array.get(indx).add(p.VisuCoreDataOffs.getFloat(j));
 				}
-			} else if (VisuCoreDim == 3) {
-				for (int j = 0; j < fid_dims[3]; j++) {
+			} else if (p.VisuCoreDim == 3) {
+				for (int j = 0; j < shape[3]; j++) {
 					INDArrayIndex[] indx = { NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.all(),
 							NDArrayIndex.point(j) };
-					data_array.get(0).get(indx).add(VisuCoreDataSlope.getFloat(i));
+					data_array.get(indx).mul(p.VisuCoreDataSlope.getFloat(j));
+					data_array.get(indx).add(p.VisuCoreDataOffs.getFloat(j));
 				}
 			}
-		}
 		return data_array;
 	}
 
@@ -407,64 +342,34 @@ public class Bruker {
 	 * @param reco       : a JcampdxData Object
 	 * @return an ArrayList of INDArray Objects
 	 */
-	private ArrayList<INDArray> form_frame_groups(ArrayList<INDArray> data_array, JcampdxData visu_pars,
-												  JcampdxData reco) {
-		// TODO Auto-generated method stub
-		ArrayList VisuFGOrderDesc = visu_pars.getArrayList("VisuFGOrderDesc");
-		int VisuFGOrderDescDim = 0;
-		try {
-			VisuFGOrderDescDim = visu_pars.getInt("VisuFGOrderDescDim");
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			logger.error("VisuFGOrderDescDim not found");
-		}
-		INDArray VisuCoreSize = visu_pars.getINDArray("VisuCoreSize");
-		int[] fg_dims = new int[VisuFGOrderDescDim];
-
-		for (int i = 0; i < VisuFGOrderDescDim; i++) {
-			Object[] obj = (Object[]) VisuFGOrderDesc.get(i);
-			String str_obj = obj[0].toString();
-			String cmplx_flag = obj[1].toString();
-			int int_obj = Integer.parseInt(str_obj);
-			fg_dims[i] = int_obj;
-		}
-
-		int[] reshape_scheme = new int[(int) (VisuCoreSize.length() + fg_dims.length)];
-		for (int i = 0; i < VisuCoreSize.length(); i++) {
-			reshape_scheme[i] = VisuCoreSize.getInt(i);
-		}
-		for (int i = (int) VisuCoreSize.length(); i < VisuCoreSize.length() + fg_dims.length; i++) {
-			reshape_scheme[i] = fg_dims[(int) (i - VisuCoreSize.length())];
-		}
-		data_array.get(0).reshape('f', reshape_scheme);
-		data_array.add(data_array.get(0).dup());
+	private INDArray form_frame_groups(INDArray data_array) {
+		data_array.reshape('f', getConditions().storage);
 		return data_array;
 	}
 
-	public ArrayList<INDArray> read_fid(JcampdxData acqp, JcampdxData method) {
-		int ACQ_dim = acqp.getInt("ACQ_dim");
-		ArrayList<Object> ArrBD = new ArrayList<>();
+	public ArrayList<INDArray> read_fid() {
+		Object ArrBD = new ArrayList<>();
 		ArrayList<INDArray> data_array = new ArrayList<INDArray>();
 		try {
-			ArrBD = read_fid_file(acqp, method);
+			ArrBD = read_fid_file();
 		} catch (IOException e) {
-			logger.error("There is a problem with reading the fid file");
+			logger.error("There is a problem with reading the fid file/n {}", e);
 		}
 
-		data_array = reshape_fid(ArrBD, acqp, method);
-        System.out.println("check point 1");
-		if (ACQ_dim == 2) {
-			data_array = reorder_fid_lines_2d(data_array, acqp, method);
-			data_array = reorder_fid_frames_2d(data_array, acqp, method);
-		} else if (ACQ_dim == 3) {
-			reorder_fid_3d();
+		try {
+			data_array = reshape_fid(ArrBD);
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error("There is a problem with reading the fid file /n {}", e);
 		}
+
+
 		return data_array;
 	}
 
 	private void reorder_fid_3d() {
-		// TODO Auto-generated method stub
-
+		// TODO will be empty???
+		
 	}
 
 //	private void paraVision360(JcampdxData acqp, JcampdxData method) {
@@ -480,22 +385,16 @@ public class Bruker {
 	 * @param method
 	 * @return an ArrayList of INDArray Objects
 	 */
-	public ArrayList<INDArray> reorder_fid_frames_2d(ArrayList<INDArray> data_array, JcampdxData acqp,
-													 JcampdxData method) {
-
-		INDArray PVM_ObjOrderList_IndArr = method.getINDArray("PVM_ObjOrderList");
-		int[] PVM_ObjOrderList = PVM_ObjOrderList_IndArr.data().asInt();
-		int[] PVM_ObjOrderList_sorted = ArrayUtil.argsort(PVM_ObjOrderList);
+	public ArrayList<INDArray> reorder_fid_frames_2d(ArrayList<INDArray> data_array) {
+		
+		int[] PVM_ObjOrderList_sorted = ArrayUtil.argsort(parameters.PVM_ObjOrderList);
 		INDArray real = data_array.get(0);
 		INDArray imag = data_array.get(1);
-		int NSLICES = acqp.getInt("NSLICES");
-		int NI = acqp.getInt("NI");
 		long[] fid_dims = imag.shape();
-		int PVM_EncNReceivers = method.getInt("PVM_EncNReceivers");
-		if (NSLICES != NI) {
-			int NR = (int) (NI / NSLICES);
-			NI = NSLICES;
-			reshape_scheme = new int[] { (int) fid_dims[0], (int) fid_dims[1], NR, NI, PVM_EncNReceivers };
+		if (parameters.NSLICES != parameters.NI) {
+			int NR_new = (int) (parameters.NI / parameters.NSLICES);
+			int NI_new = parameters.NSLICES;
+			reshape_scheme = new int[] { (int) fid_dims[0], (int) fid_dims[1], NR_new, NI_new, parameters.PVM_EncNReceivers };
 			permute_scheme = new int[] { 0, 1, 3, 2, 4 };
 			real = real.reshape('f', reshape_scheme);
 			imag = imag.reshape('f', reshape_scheme);
@@ -505,7 +404,7 @@ public class Bruker {
 
 		}
 		INDArray newOBJ_imag, newOBJ_real;
-		for (int i = 0; i < PVM_ObjOrderList.length; i++) {
+		for (int i = 0; i < parameters.PVM_ObjOrderList.length; i++) {
 			INDArrayIndex[] indx = { NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.point(i), NDArrayIndex.all(),
 					NDArrayIndex.all() };
 
@@ -531,34 +430,77 @@ public class Bruker {
 	 * @param method     : a JcampdxData Object
 	 * @return an ArrayList of INDArray Objects
 	 */
-	public ArrayList<INDArray> reorder_fid_lines_2d(ArrayList<INDArray> data_array, JcampdxData acqp,
-													JcampdxData method) {
-
-		int PVM_EncNReceivers = method.getInt("PVM_EncNReceivers");
-		INDArray PVM_EncSteps1 = method.getINDArray("PVM_EncSteps1");
+	public ArrayList<INDArray> reorder_fid_lines_2d(ArrayList<INDArray> data_array) {		
 		INDArray real = data_array.get(0);
 		INDArray imag = data_array.get(1);
-		int NR = acqp.getInt("NR");
-		int NI = acqp.getInt("NI");
-		// ArrayUtil.argsort(PVM_EncSteps1);
-		int[] sorted = argsort(PVM_EncSteps1.data().asInt(), true);
-		INDArray OBJ_imag, OBJ_real;
-		for (int reciever = 0; reciever < PVM_EncNReceivers; reciever++) {
-			for (int repition = 0; repition < NR; repition++) {
-				for (int Object_cnt = 0; Object_cnt < NI; Object_cnt++) {
-					INDArrayIndex[] indx = { NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.point(Object_cnt),
-							NDArrayIndex.point(repition), NDArrayIndex.point(reciever) };
-					OBJ_imag = imag.get(indx);
-					imag.put(indx, OBJ_imag.getColumns(sorted));
-					OBJ_real = real.get(indx);
-					real.put(indx, OBJ_real.getColumns(sorted));
-				}
+		INDArray PVM_EncSteps1;
+		try {
+			PVM_EncSteps1 = parameters.PVM_EncSteps1;
+			int[] sorted = argsort(PVM_EncSteps1.toIntVector(), true);
+			INDArray OBJ_imag, OBJ_real;
+			
+			int[] matrix = Arrays.stream(real.shape()).mapToInt(x -> (int) x).toArray();
+			ArrayList<int[]> mat = indices(matrix, 2, matrix.length) ;
+			for(int[] indices : mat) {
+				INDArrayIndex[] indx = { NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.point(indices[0]),
+						NDArrayIndex.point(indices[1]), NDArrayIndex.point(indices[2]) };
+				OBJ_imag = imag.get(indx);
+				imag.put(indx, OBJ_imag.getColumns(sorted));
+				OBJ_real = real.get(indx);
+				real.put(indx, OBJ_real.getColumns(sorted));
 			}
+
+			data_array.clear();
+			data_array.add(0, real);
+			data_array.add(1, imag);
+			
+		} catch (Exception e) {
+			// TODO: handle exception
+			
 		}
+		
+		
+		/**
+		 *         if dir == 'BW':
+            PVM_EncSteps1_sorted = self.permutation_inverse(PVM_EncSteps1_sorted)
+
+
+        if np.array_equal(PVM_EncSteps1_sorted,PVM_EncSteps1):
+            return data
+		 */
+		
+		
+		return data_array;
+		
+	}
+	
+	
+	public ArrayList<INDArray> mirror_odd_lines(ArrayList<INDArray> data_array) {	
+		INDArray real = data_array.get(0);
+		INDArray imag = data_array.get(1);
+		INDArray OBJ_imag, OBJ_real;
+				int[] matrix = Arrays.stream(real.shape()).mapToInt(x -> (int) x).toArray();
+				ArrayList<int[]> mat = indices(matrix, 2, matrix.length) ;
+				for(int[] indices : mat) {
+					
+						
+					INDArrayIndex[] indx = { NDArrayIndex.all(), NDArrayIndex.interval(1, 2, real.shape()[1]), NDArrayIndex.point(indices[0]),
+							NDArrayIndex.point(indices[1]), NDArrayIndex.point(indices[2]) };
+					
+					OBJ_imag = imag.get(indx);
+					OBJ_real = real.get(indx);
+
+					int[] idx = new int[(int) OBJ_imag.shape()[0]];
+					for(int i = 0 ; i<OBJ_imag.shape()[0] ; i ++)
+						idx[i] = (int) (OBJ_imag.shape()[0] - i -1);
+					imag.put(indx, OBJ_imag.getRows(idx));
+					real.put(indx, OBJ_real.getRows(idx));
+				}
+		
+		data_array.clear();
 		data_array.add(0, real);
 		data_array.add(1, imag);
 		return data_array;
-
 	}
 
 	/**
@@ -569,42 +511,78 @@ public class Bruker {
 	 * @param method : a JcampdxData Object
 	 * @return an ArrayList of INDArray Objects
 	 */
-	public ArrayList<INDArray> reshape_fid(ArrayList<Object> ArrBD, JcampdxData acqp, JcampdxData method) {
-		INDArray real = Nd4j.zeros(ArrBD.size() / 2);
-		INDArray imag = Nd4j.zeros(ArrBD.size() / 2);
-		for (int i = 0; i < ArrBD.size(); i = i + 2) {
-			real.putScalar(i / 2, Double.valueOf(ArrBD.get(i).toString()));
-			imag.putScalar(i / 2, Double.valueOf(ArrBD.get(i + 1).toString()));
+	public ArrayList<INDArray> reshape_fid(Object ArrBD) {
+		INDArray real = null;
+		INDArray imag = null;
+		INDArray data = null;
+		
+		switch (parameters.dataType) {
+		case DOUBLE:
+			data = Nd4j.createFromArray((double[]) ArrBD);
+			break;
+		case INTEGER:
+			data = Nd4j.createFromArray((int[]) ArrBD);
+			break;
+		case FLOAT:
+			data = Nd4j.createFromArray((float[]) ArrBD);
+			break;
+		default:
+			break;
 		}
 		ArrBD = null;
 		System.gc();
-		get_reorder_schemes_fid(acqp, method);
-		long[] fid_dims = imag.shape();
-		if (fid_dims[0] != product(reshape_scheme_1)) {
-			reshape_scheme_1[0] = (int) (fid_dims[0]
-					/ product(Arrays.copyOfRange(reshape_scheme_1, 1, reshape_scheme_1.length)));
-			int[] trim = get_acq_trim(acqp);
-			real = real.reshape('f', reshape_scheme_1);
-			imag = imag.reshape('f', reshape_scheme_1);
-			// to do : out of index
-			real = real.get(NDArrayIndex.interval(trim[0], trim[1]), NDArrayIndex.all(), NDArrayIndex.all(),
-					NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.all());
-			imag = real.get(NDArrayIndex.interval(trim[0], trim[1]), NDArrayIndex.all(), NDArrayIndex.all(),
-					NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.all());
-		} else {
-			real = real.reshape('f', reshape_scheme_1);
-			imag = imag.reshape('f', reshape_scheme_1);
-		}
-		real = real.permute(permute_scheme_1);
-		imag = imag.permute(permute_scheme_1);
+		
+		data = data.reshape('f', conditions.getStorage());
+		
+		data = acquistion_trim(data);
+		
+		real = data.get(NDArrayIndex.interval(0, 2, data.size(0)));
+		imag = data.get(NDArrayIndex.interval(1, 2, data.size(0))) ;
 
-		real = real.reshape('f', reshape_scheme_2);
-		imag = imag.reshape('f', reshape_scheme_2);
+		real = real.reshape('f', conditions.encoding_space_shape);
+		imag = imag.reshape('f', conditions.encoding_space_shape);
+			
+		real = real.permute(conditions.permute_scheme);
+		imag = imag.permute(conditions.permute_scheme);
+
+		real = real.reshape('f', conditions.k_space_shape);
+		imag = imag.reshape('f', conditions.k_space_shape);
 
 		ArrayList<INDArray> data_array = new ArrayList<INDArray>();
 		data_array.add(real);
 		data_array.add(imag);
+		
+		data_array = reorder_fid_lines_2d(data_array);
+		
+		if (conditions.getACQS_TYPE() == ACQ_TYPE.EPI) {
+			data_array = mirror_odd_lines(data_array);
+		}
+		
 		return data_array;
+	}
+
+	private INDArray acquistion_trim(INDArray data) {
+		// TODO Auto-generated method stub
+		int acquisition_offset = conditions.getAcquisition_position()[0];
+		int acquisition_length = conditions.getAcquisition_position()[1];
+		int block_length = conditions.getStorage()[0];
+		
+		if (acquisition_offset > 0) {
+			int blocks = conditions.getStorage()[1];
+			int channels = conditions.k_space_shape[conditions.k_space_dim_desc.indexOf("channel")];
+			acquisition_offset = Math.floorDiv(acquisition_offset, channels);
+		    acquisition_length = Math.floorDiv(acquisition_length, channels);
+		    data = data.reshape('f', new int[] {conditions.getStorage()[0] , channels, blocks});
+			data = data.get(NDArrayIndex.interval(acquisition_offset, acquisition_offset+acquisition_length),NDArrayIndex.all(),NDArrayIndex.all()).reshape('f', new int[] {acquisition_length*channels, blocks});
+			return data;
+		} else {
+			if (acquisition_length != block_length) {
+				data = data.get(NDArrayIndex.interval(0, acquisition_length),NDArrayIndex.all());
+				return data;
+			} else {
+				return data;
+			}
+		}
 	}
 
 	/**
@@ -612,10 +590,10 @@ public class Bruker {
 	 * @param acqp : a JcampdxData Object
 	 * @return
 	 */
-	public int[] get_acq_trim(JcampdxData acqp) {
-		String ACQS_TYPE = getACQS_TYPE();
-		INDArray ACQ_size = acqp.getINDArray("ACQ_size");
-		if (ACQS_TYPE == "RADIAL_2D" || ACQS_TYPE == "RADIAL_3D") {
+	public int[] get_acq_trim() {
+		ACQ_TYPE ACQS_TYPE = conditions.getACQS_TYPE();
+		INDArray ACQ_size = parameters.ACQ_size;
+		if (ACQS_TYPE == ACQ_TYPE.RADIAL) {
 			return new int[] { 0, (int) ACQ_size.getInt(0) / 2 };
 			// again divided to 2?
 		} else {
@@ -629,75 +607,9 @@ public class Bruker {
 	 * @param acqp   : a JcampdxData Object
 	 * @param method : a JcampdxData Object
 	 */
-	public void get_reorder_schemes_fid(JcampdxData acqp, JcampdxData method) {
-		String ACQS_TYPE = getACQS_TYPE();
-		int NR = acqp.getInt("NR");
-		int NI = acqp.getInt("NI");
-		int NPro;
-		try {
-			NPro = acqp.getInt("NPro");
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			NPro = 0;
-		}
-		int ACQ_phase_factor = acqp.getInt("ACQ_phase_factor");
-		INDArray ACQ_size = acqp.getINDArray("ACQ_size");
-		ACQ_size.putScalar(0, ACQ_size.getInt(0) / 2);
-		INDArray PVM_EncMatrix = method.getINDArray("PVM_EncMatrix");
-		int PVM_EncNReceivers;
-		int PVM_EncTotalAccel;
-		try {
-			PVM_EncNReceivers = method.getInt("PVM_EncNReceivers");
-
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			PVM_EncNReceivers = 0;
-
-		}
-		try {
-
-			PVM_EncTotalAccel = method.getInt("PVM_EncTotalAccel");
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-
-			PVM_EncTotalAccel = 0;
-		}
-		if (ACQS_TYPE == "CART_2D") {
-			reshape_scheme_1 = new int[] { PVM_EncMatrix.getInt(0), PVM_EncNReceivers, ACQ_phase_factor, NI,
-					PVM_EncMatrix.getInt(1) / ACQ_phase_factor, NR };
-			reshape_scheme_2 = new int[] { PVM_EncMatrix.getInt(0), PVM_EncMatrix.getInt(1), NI, NR,
-					PVM_EncNReceivers };
-			permute_scheme_1 = new int[] { 0, 2, 4, 3, 5, 1 };
-		} else if (ACQS_TYPE == "CART_3D") {
-			reshape_scheme_1 = new int[] { PVM_EncMatrix.getInt(0) / PVM_EncTotalAccel, PVM_EncNReceivers,
-					ACQ_phase_factor, PVM_EncMatrix.getInt(1) / ACQ_phase_factor, PVM_EncMatrix.getInt(2), NR };
-			reshape_scheme_2 = new int[] { PVM_EncMatrix.getInt(0), PVM_EncMatrix.getInt(1), PVM_EncMatrix.getInt(2),
-					NR, PVM_EncNReceivers };
-			permute_scheme_1 = new int[] { 0, 2, 3, 4, 5, 1 };
-		} else if (ACQS_TYPE == "RADIAL_2D") {
-			reshape_scheme_1 = new int[] { ACQ_size.getInt(0), PVM_EncNReceivers, ACQ_phase_factor, NI,
-					NPro / ACQ_phase_factor, NR };
-			reshape_scheme_2 = new int[] { ACQ_size.getInt(0), NPro, NI, NR, PVM_EncNReceivers };
-			permute_scheme_1 = new int[] { 0, 2, 4, 3, 5, 1 };
-		} else if (ACQS_TYPE == "RADIAL_3D") {
-			reshape_scheme_1 = new int[] { ACQ_size.getInt(0), PVM_EncNReceivers, ACQ_phase_factor, NI,
-					NPro / ACQ_phase_factor, NR };
-			reshape_scheme_2 = new int[] { ACQ_size.getInt(0), NPro, NI, NR, PVM_EncNReceivers };
-			permute_scheme_1 = new int[] { 0, 2, 4, 3, 5, 1 };
-		} else if (ACQS_TYPE.contentEquals("CSI")) {
-			if (acqp.getString("ACQ_sw_version").contains("PV-360")) {
-				INDArray numberOfPoint = method.getINDArray("PVM_SpecMatrix");
-				INDArray PVM_Matrix = method.getINDArray("PVM_Matrix");
-				reshape_scheme_1 = reshape_scheme_1 = new int[] { (int) numberOfPoint.getInt(0), PVM_Matrix.getInt(0),
-						PVM_Matrix.getInt(1) };
-				reshape_scheme_2 = reshape_scheme_1;
-				permute_scheme_1 = new int[] { 0, 1, 2 };
-			} else {
-				reshape_scheme_1 = new int[] { ACQ_size.getInt(0), ACQ_size.getInt(1), ACQ_size.getInt(2) };
-				reshape_scheme_2 = reshape_scheme_1;
-				permute_scheme_1 = new int[] { 0, 1, 2 };
-			}
-		}
+	public void get_reorder_schemes_fid() {
+//		parameters.ACQ_size.putScalar(0, parameters.ACQ_size.getInt(0) / 2);
+		conditions.getEncoding_space_shape();
 	}
 
 	/**
@@ -708,32 +620,11 @@ public class Bruker {
 	 * @return
 	 * @throws IOException
 	 */
-	public ArrayList<Object> read_fid_file(JcampdxData acqp, JcampdxData method) throws IOException {
-		FileInputStream dataStream = new FileInputStream(path.toString());
+	public Object read_fid_file() throws IOException {
+		FileInputStream dataStream = new FileInputStream(conditions.getPath().toString());
 		DataInputStream dataFilter = new DataInputStream(dataStream);
 		DataInputStream buffReader = new DataInputStream(new BufferedInputStream(dataFilter));
-		String acqp_GO_raw_data_format = null;
-		String acqp_BYTORDA = null;
-		// check it is working without to string
-		if (acqp.getString("ACQ_sw_version").contains("PV-360")) {
-			try {
-				String dataType = acqp.getString("DTYPA");
-				if (dataType.contentEquals("Double")) {
-					acqp_GO_raw_data_format = "GO_32BIT_DOUBLE";
-				}
-				acqp_BYTORDA = acqp.getString("BYTORDA");
-			} catch (Exception e) {
-				logger.error("Parameters missing: acqp_BYTORDA, or acqp_BYTORDA");
-			}
-		} else {
-			try {
-				acqp_GO_raw_data_format = acqp.getString("GO_raw_data_format");
-				acqp_BYTORDA = acqp.getString("BYTORDA");
-			} catch (Exception e) {
-				logger.error("Parameters missing: acqp_BYTORDA, or acqp_BYTORDA");
-			}
-		}
-		ArrayList<Object> ArrBD = dtype(buffReader, acqp_GO_raw_data_format, acqp_BYTORDA);
+		Object ArrBD = dtype(buffReader, parameters.Acqp_GO_raw_data_format, parameters.Acqp_BYTORDA);
 		return ArrBD;
 	}
 
@@ -747,31 +638,44 @@ public class Bruker {
 	 * @throws EOFException
 	 * @throws IOException
 	 */
-	private ArrayList<Object> dtype(DataInputStream buffReader, String arg1, String arg2)
+	private Object dtype(DataInputStream buffReader, String arg1, String arg2)
 			throws EOFException, IOException {
-		ArrayList<Object> ArrBD = new ArrayList<>();
+		
+		Object ArrBD;
 		if ((arg1.contentEquals("GO_32BIT_SGN_INT") || arg1.contentEquals("_32BIT_SGN_INT"))
 				&& (arg2.contentEquals("little") || arg2.contentEquals("littleEndian"))) {
+			parameters.dataType = DATA_TYPE.INTEGER;
 			ArrBD = rev_int32_conversion(buffReader);
 		} else if ((arg1.contentEquals("GO_16BIT_SGN_INT") || arg1.contentEquals("_16BIT_SGN_INT"))
 				&& (arg2.contentEquals("little") || arg2.contentEquals("littleEndian"))) {
 			ArrBD = rev_int16_conversion(buffReader);
+			parameters.dataType = DATA_TYPE.INTEGER;
 		} else if ((arg1.contentEquals("GO_32BIT_FLOAT") || arg1.contentEquals("_32BIT_FLOAT"))
 				&& (arg2.contentEquals("little") || arg2.contentEquals("littleEndian"))) {
 			ArrBD = rev_float_conversion(buffReader);
+			parameters.dataType = DATA_TYPE.FLOAT;
 		} else if ((arg1.contentEquals("GO_32BIT_SGN_INT") || arg1.contentEquals("_32BIT_SGN_INT"))
 				&& (arg2.contentEquals("big") || arg2.contentEquals("bigEndian"))) {
+			parameters.dataType = DATA_TYPE.INTEGER;
 			ArrBD = int_conversion(buffReader);
 		} else if ((arg1.contentEquals("GO_16BIT_SGN_INT") || arg1.contentEquals("_16BIT_SGN_INT"))
 				&& (arg2.contentEquals("big") || arg2.contentEquals("bigEndian"))) {
+			parameters.dataType = DATA_TYPE.INTEGER;
 			ArrBD = int16_conversion(buffReader);
 		} else if ((arg1.contentEquals("GO_32BIT_FLOAT") || arg1.contentEquals("_32BIT_FLOAT"))
 				&& (arg2.contentEquals("big") || arg2.contentEquals("bigEndian"))) {
+			parameters.dataType = DATA_TYPE.FLOAT;
 			ArrBD = float_conversion(buffReader);
 		} else if ((arg1.contentEquals("GO_32BIT_DOUBLE") || arg1.contentEquals("_32BIT_DOUBLE"))
 				&& (arg2.contentEquals("little") || arg2.contentEquals("littleEndian"))) {
+			parameters.dataType = DATA_TYPE.DOUBLE;
+			ArrBD = rev_double_conversion(buffReader);
+		} else if ((arg1.contentEquals("GO_32BIT_DOUBLE") || arg1.contentEquals("_32BIT_DOUBLE"))
+				&& (arg2.contentEquals("big") || arg2.contentEquals("bigEndian"))) {
+			parameters.dataType = DATA_TYPE.DOUBLE;
 			ArrBD = double_conversion(buffReader);
 		} else {
+			parameters.dataType = DATA_TYPE.INTEGER;
 			ArrBD = rev_int32_conversion(buffReader);
 			logger.error("Data format not specified correctly, set to int32, little endian");
 		}
@@ -786,19 +690,25 @@ public class Bruker {
 	 * @throws EOFException
 	 * @throws IOException
 	 */
-	private ArrayList<Object> rev_int32_conversion(DataInputStream buffReader) throws EOFException, IOException {
-		ArrayList<Object> ArrBD = new ArrayList<>();
+	private Object rev_int32_conversion(DataInputStream buffReader) throws EOFException, IOException {
+
+		int storage = conditions.getBinarySize();
+		int[] data = new int[storage];
+		int i = 0;
 		while (buffReader.available() > 0) {
+			if(i == storage) 
+				break;
 			int ch1 = buffReader.read();
 			int ch2 = buffReader.read();
 			int ch3 = buffReader.read();
 			int ch4 = buffReader.read();
 			if ((ch1 | ch2 | ch3 | ch4) < 0)
 				throw new EOFException();
-			int BD = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
-			ArrBD.add(BD);
+			data [i] = ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
+			i++;
 		}
-		return ArrBD;
+		return data;
+		
 	}
 
 	/**
@@ -808,13 +718,17 @@ public class Bruker {
 	 * @return
 	 * @throws IOException
 	 */
-	private ArrayList<Object> int_conversion(DataInputStream buffReader) throws IOException {
-		ArrayList<Object> ArrBD = new ArrayList<>();
+	private Object int_conversion(DataInputStream buffReader) throws IOException {
+		int storage = conditions.getBinarySize();
+		int[] data = new int[storage];
+		int i = 0;
 		while (buffReader.available() > 0) {
-			Integer BD = buffReader.readInt();
-			ArrBD.add(BD);
+			if(i == storage) 
+				break;
+			data[i] = buffReader.readInt();
+			i++;
 		}
-		return ArrBD;
+		return data;
 	}
 
 	/**
@@ -825,17 +739,22 @@ public class Bruker {
 	 * @throws EOFException
 	 * @throws IOException
 	 */
-	private ArrayList<Object> rev_int16_conversion(DataInputStream buffReader) throws EOFException, IOException {
-		ArrayList<Object> ArrBD = new ArrayList<>();
+	private Object rev_int16_conversion(DataInputStream buffReader) throws EOFException, IOException {
+		int storage = conditions.getBinarySize();
+		int[] data = new int[storage];
+		int i = 0;
 		while (buffReader.available() > 0) {
+			if(i == storage) 
+				break;
 			int ch1 = buffReader.read();
 			int ch2 = buffReader.read();
 			if ((ch1 | ch2) < 0)
 				throw new EOFException();
-			Integer BD = ((ch2 << 8) + (ch1 << 0));
-			ArrBD.add(BD);
+			data[i] = ((ch2 << 8) + (ch1 << 0));
+			i++;
+			
 		}
-		return ArrBD;
+		return data;
 	}
 
 	/**
@@ -846,17 +765,22 @@ public class Bruker {
 	 * @throws EOFException
 	 * @throws IOException
 	 */
-	private ArrayList<Object> int16_conversion(DataInputStream buffReader) throws EOFException, IOException {
-		ArrayList<Object> ArrBD = new ArrayList<>();
+	private Object int16_conversion(DataInputStream buffReader) throws EOFException, IOException {
+		int storage = conditions.getBinarySize();
+		int[] data = new int[storage];
+		int i = 0;
 		while (buffReader.available() > 0) {
+			if(i == storage) 
+				break;
 			int ch1 = buffReader.read();
 			int ch2 = buffReader.read();
 			if ((ch1 | ch2) < 0)
 				throw new EOFException();
-			int BD = ((ch1 << 8) + (ch2 << 0));
-			ArrBD.add(BD);
+			data[i] = ((ch1 << 8) + (ch2 << 0));
+			i++;
+			
 		}
-		return ArrBD;
+		return data;
 	}
 
 	/**
@@ -866,19 +790,23 @@ public class Bruker {
 	 * @return
 	 * @throws IOException
 	 */
-	private ArrayList<Object> rev_float_conversion(DataInputStream buffReader) throws IOException {
-		ArrayList<Object> ArrBD = new ArrayList<>();
+	private Object rev_float_conversion(DataInputStream buffReader) throws IOException {
+		int storage = conditions.getBinarySize();
+		float[] data = new float[storage];
+		int i = 0;
 		while (buffReader.available() > 0) {
+			if(i == storage) 
+				break;
 			int ch1 = buffReader.read();
 			int ch2 = buffReader.read();
 			int ch3 = buffReader.read();
 			int ch4 = buffReader.read();
 			if ((ch1 | ch2 | ch3 | ch4) < 0)
 				throw new EOFException();
-			Float BD = Float.intBitsToFloat(((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0)));
-			ArrBD.add(BD);
+			data[i] = Float.intBitsToFloat(((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0)));
+			i++;
 		}
-		return ArrBD;
+		return data;
 	}
 
 	/**
@@ -888,13 +816,17 @@ public class Bruker {
 	 * @return
 	 * @throws IOException
 	 */
-	private ArrayList<Object> float_conversion(DataInputStream buffReader) throws IOException {
-		ArrayList<Object> ArrBD = new ArrayList<>();
+	private Object float_conversion(DataInputStream buffReader) throws IOException {
+		int storage = conditions.getBinarySize();
+		float[] data = new float[storage];
+		int i = 0;
 		while (buffReader.available() > 0) {
-			Float BD = buffReader.readFloat();
-			ArrBD.add(BD);
+			if(i == storage) 
+				break;
+			data[i] = buffReader.readFloat();
+			i++;
 		}
-		return ArrBD;
+		return data;
 	}
 
 	/**
@@ -904,24 +836,28 @@ public class Bruker {
 	 * @return
 	 * @throws IOException
 	 */
-	private ArrayList<Object> rev_double_conversion(DataInputStream buffReader) throws IOException {
-		ArrayList<Object> ArrBD = new ArrayList<>();
+	private Object rev_double_conversion(DataInputStream buffReader) throws IOException {
+		int storage = conditions.getBinarySize();
+		double[] data = new double[storage];
+		int i = 0;
 		while (buffReader.available() > 0) {
-			int ch1 = buffReader.read();
-			int ch2 = buffReader.read();
-			int ch3 = buffReader.read();
-			int ch4 = buffReader.read();
-			int ch5 = buffReader.read();
-			int ch6 = buffReader.read();
-			int ch7 = buffReader.read();
-			int ch8 = buffReader.read();
+			if(i == storage) 
+				break;
+			long ch1 = buffReader.read();
+			long ch2 = buffReader.read();
+			long ch3 = buffReader.read();
+			long ch4 = buffReader.read();
+			long ch5 = buffReader.read();
+			long ch6 = buffReader.read();
+			long ch7 = buffReader.read();
+			long ch8 = buffReader.read();
 			if ((ch1 | ch2 | ch3 | ch4 | ch5 | ch6 | ch7 | ch8) < 0)
 				throw new EOFException();
-			Double BD = Double.longBitsToDouble(((ch8 << 56) + (ch7 << 48) + (ch6 << 40) + (ch5 << 32) + (ch4 << 24)
+			data[i] = Double.longBitsToDouble(((ch8 << 56) + (ch7 << 48) + (ch6 << 40) + (ch5 << 32) + (ch4 << 24)
 					+ (ch3 << 16) + (ch2 << 8) + (ch1 << 0)));
-			ArrBD.add(BD);
+			i++;
 		}
-		return ArrBD;
+		return data;
 	}
 
 	/**
@@ -931,13 +867,18 @@ public class Bruker {
 	 * @return
 	 * @throws IOException
 	 */
-	private ArrayList<Object> double_conversion(DataInputStream buffReader) throws IOException {
-		ArrayList<Object> ArrBD = new ArrayList<>();
+	private Object double_conversion(DataInputStream buffReader) throws IOException {
+		int storage = conditions.getBinarySize();
+		double[] data = new double[storage];
+ 		int i = 0;
 		while (buffReader.available() > 0) {
-			Double BD = buffReader.readDouble();
-			ArrBD.add(BD);
+			if(i == storage) 
+				break;
+			data[i] = buffReader.readDouble();
+			buffReader.readDouble();
+			i++;
 		}
-		return ArrBD;
+		return data;
 	}
 
 	int product(int ar[]) {
@@ -964,7 +905,52 @@ public class Bruker {
 
 		return ret;
 	}
-
+	
+	
+	public ArrayList<int[]> indices(int[] shape) {
+		return indices(shape, 0, shape.length );
+	}
+	
+	public ArrayList<int[]> indices(int[] shape, int from, int to ) {
+		int[] realshape = Arrays.copyOfRange(shape, from, to);
+		int[] indx = new int[realshape.length];
+		boolean endFlag = true;
+		int temp = 0;
+		ArrayList<int[]> mat = new ArrayList<int[]>();
+		int l = 0;
+		boolean flag = true;
+		mat.add(indx.clone());
+		
+		int j = realshape.length - 1;
+		for (int i = 0; i < product(realshape) - 1; i++) {
+			
+			if ((j == realshape.length - 1)) {
+				while ((indx[j] == realshape[j] - 1)) {
+					if (j > 0) {
+						indx[j] = 0;
+						j -= 1;
+					} else {
+						j = realshape.length - 1;
+					}
+				}
+			} else {
+				if ((indx[j] > realshape[j] - 1)) {
+					if (j > 0) {
+						indx[j] = 0;
+						j -= 1;
+					} else {
+						j = realshape.length - 1;
+					}
+				} else {
+					j = realshape.length - 1;
+				}
+			}
+			indx[j] += 1;
+			j = realshape.length - 1;
+			mat.add(indx.clone());
+		}
+		return mat;
+	}
 //	public Bruker(String path) {
 //		this.pathL = Paths.get(path);
 //		String filename = pathL.getFileName().toString(); 
