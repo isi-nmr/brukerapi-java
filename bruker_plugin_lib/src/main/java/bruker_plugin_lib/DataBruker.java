@@ -23,7 +23,64 @@ public class DataBruker extends ArrayList<INDArray> {
 		if (bruker.isRaw())
 		this.imag = data.get(1);
 	}
+	
+	public double[] getRealDataAsDouble() {
+		int dim = 0;
+		double[] m_absorptionChannelTDraw = getRealDataAsDouble(dim);
+		return m_absorptionChannelTDraw;
+	}
 
+	/**
+	 * return real data in desired dimension
+	 * @param dim dimension
+	 * @return
+	 */
+	public double[] getRealDataAsDouble(int dim) {
+		if(bruker.isRaw()) {
+			try {
+				long[] dims = real.shape();
+				int size = (int) real.length();
+				for (int i = 0; i < real.vectorsAlongDimension(dim); i++) {
+						double[] m_absorptionChannelTDraw_double = new double[size];
+						double[] re_double = real.vectorAlongDimension((int) i, dim).toDoubleVector();
+						System.arraycopy(re_double, 0, m_absorptionChannelTDraw_double, (int) (i * dims[0]), (int) dims[0]);
+						return m_absorptionChannelTDraw_double;
+				}
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return null;
+			}
+		} else {
+			try {
+				long[] dims = bruker.getCplxDims();
+				if (dims.length == 5) {
+					real = real.get(NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.point(0));
+				}
+				if (dims.length == 4) {
+					real = real.get(NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.point(dim));
+				}
+				if (dims.length == 3) {
+					real = real.get(NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.point(dim));
+				}
+				if (dims.length == 2) {
+					return null;
+				}
+				int size = (int) real.length();
+				double[] m_absorptionChannelTDraw = new double[size];
+				for (int i = 0; i < real.vectorsAlongDimension(dim); i++) {
+					double[] re = real.vectorAlongDimension((int) i, dim).toDoubleVector();
+					System.arraycopy(re, 0, m_absorptionChannelTDraw, (int) (i * dims[0]), (int) dims[0]);
+				}
+				return m_absorptionChannelTDraw;
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return null;
+			}
+		}
+		return null;
+	}
 	/**
 	 * return real data
 	 * @return real data
@@ -44,24 +101,12 @@ public class DataBruker extends ArrayList<INDArray> {
 			try {
 				long[] dims = real.shape();
 				int size = (int) real.length();
-				// INDArray dup_imag =
-				// imag.reshape(imag.vectorsAlongDimension(0)*dims[0]).dup();
 				for (int i = 0; i < real.vectorsAlongDimension(dim); i++) {
-					switch (bruker.getParameters().dataType) {
-//					case DOUBLE:
-//						Object m_absorptionChannelTDraw_double = new double[size];
-//						double[] re_double = real.vectorAlongDimension((int) i, dim).toDoubleVector();
-//						System.arraycopy(re_double, 0, m_absorptionChannelTDraw_double, (int) (i * dims[0]), (int) dims[0]);
-//						return m_absorptionChannelTDraw_double;
-					default:
 						float[] m_absorptionChannelTDraw_float = new float[size];
 						float[] re_float = real.vectorAlongDimension((int) i, dim).toFloatVector();
 						System.arraycopy(re_float, 0, m_absorptionChannelTDraw_float, (int) (i * dims[0]), (int) dims[0]);
-						return m_absorptionChannelTDraw_float;
-					}
-					
+						return m_absorptionChannelTDraw_float;			
 				}
-				
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -98,93 +143,81 @@ public class DataBruker extends ArrayList<INDArray> {
 		return null;
 	}
 
-	public void setRealData(float[] realData) {
-		this.realData = realData;
-	}
-
-	public void setImagData(float[] imagData) {
-		this.imagData = imagData;
-	}
 
 	/**
 	 * return imaginary data
 	 * @return
 	 */
-	public Object getImagData() {
+	public float[] getImagData() {
 		if(bruker.isRaw()) {
 		int dim = 0;
-		Object m_absorptionChannelTDraw = getImagData(dim);
+		float[] m_absorptionChannelTDraw = getImagData(dim);
 		return m_absorptionChannelTDraw; 
 		} else {
 			return null;
 		}
 	}
-
+	/**
+	 * return imaginary data
+	 * @return
+	 */
+	public double[] getImagDataAsDouble() {
+		if(bruker.isRaw()) {
+		double[] m_absorptionChannelTDraw = getImagDataAsDouble(0);
+		return m_absorptionChannelTDraw; 
+		} else {
+			return null;
+		}
+	}
 	/**
 	 * return real data in desired dimension
 	 * @param dim
 	 * @return
 	 */
 	public float[] getImagData(int dim) {
-		if(bruker.isRaw()) {
+			float[] m_disportionChannelTDraw_float = null;
 			try {
 				long[] dims = imag.shape();
 				int size = (int) imag.length();
-				// INDArray dup_imag =
-				// imag.reshape(imag.vectorsAlongDimension(0)*dims[0]).dup();
-//				float[] m_absorptionChannelTDraw = new float[size];
 				for (int i = 0; i < imag.vectorsAlongDimension(dim); i++) {
-					switch (bruker.getParameters().dataType) {
-//					case DOUBLE:
-//						Object m_disportionChannelTDraw_double = new double[size];
-//						double[] im_double = imag.vectorAlongDimension((int) i, dim).toDoubleVector();
-//						System.arraycopy(im_double, 0, m_disportionChannelTDraw_double, (int) (i * dims[0]), (int) dims[0]);
-//						return m_disportionChannelTDraw_double;
-					default:
-						float[] m_disportionChannelTDraw_float = new float[size];
-						float[] re_float = real.vectorAlongDimension((int) i, dim).toFloatVector();
+						m_disportionChannelTDraw_float = new float[size];
+						float[] re_float = imag.vectorAlongDimension((int) i, dim).toFloatVector();
 						System.arraycopy(re_float, 0, m_disportionChannelTDraw_float, (int) (i * dims[0]), (int) dims[0]);
-						return m_disportionChannelTDraw_float;
-					}
-					
+						return m_disportionChannelTDraw_float;					
 				}
-
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 				return null;
 			}
-		} else {
-			try {
-				long[] dims = bruker.getCplxDims();
-				if (dims.length == 5) {
-					imag = imag.get(NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.point(1));
-				}
-				if (dims.length == 4) {
-					imag = imag.get(NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.point(1));
-				}
-				if (dims.length == 3) {
-					imag = imag.get(NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.point(1));
-				}
-				if (dims.length == 2) {
-					return null;
-				}
-				int size = (int) imag.length();
-				float[] m_absorptionChannelTDraw = new float[size];
-				for (int i = 0; i < imag.vectorsAlongDimension(dim); i++) {
-					float[] re = imag.vectorAlongDimension((int) i, dim).toFloatVector();
-					System.arraycopy(re, 0, m_absorptionChannelTDraw, (int) (i * dims[0]), (int) dims[0]);
-				}
-				return m_absorptionChannelTDraw;
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				return null;
-			}
-		}
-		return null;
+			
+			return m_disportionChannelTDraw_float;
 	}
-
+	public double[] getImagDataAsDouble(int dim) {
+		double[] m_disportionChannelTDraw_double = null;
+		try {
+			long[] dims = imag.shape();
+			int size = (int) imag.length();
+			for (int i = 0; i < imag.vectorsAlongDimension(dim); i++) {
+					m_disportionChannelTDraw_double = new double[size];
+					double[] re_double = imag.vectorAlongDimension((int) i, dim).toDoubleVector();
+					System.arraycopy(re_double, 0, m_disportionChannelTDraw_double, (int) (i * dims[0]), (int) dims[0]);
+					return m_disportionChannelTDraw_double;					
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+		
+		return m_disportionChannelTDraw_double;
+	}
+	
+	
+	
+	
+	
+	
 	/**
 	 * Convert INDArray to double array
 	 * @return 3 dimension double array

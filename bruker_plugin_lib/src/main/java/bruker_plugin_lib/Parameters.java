@@ -96,7 +96,12 @@ public class Parameters {
 		NSLICES = bruker.getJcampdx().getAcqp().getInt("NSLICES");
 		ACQ_dim = bruker.getJcampdx().getAcqp().getInt("ACQ_dim");
 		PVM_EncSteps1 = bruker.getJcampdx().getMethod().getINDArray("PVM_EncSteps1");
-		PVM_ObjOrderList =  bruker.getJcampdx().getMethod().getINDArray("PVM_ObjOrderList").data().asInt();
+		try {
+			PVM_ObjOrderList =  bruker.getJcampdx().getMethod().getINDArray("PVM_ObjOrderList").data().asInt();
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			
+		}
 		PVM_SpecMatrix = bruker.getJcampdx().getMethod().getInt("PVM_SpecMatrix");
 		NSegments = bruker.getJcampdx().getMethod().getInt("NSegments");
 		ACQ_method = bruker.getJcampdx().getAcqp().getString("ACQ_method");

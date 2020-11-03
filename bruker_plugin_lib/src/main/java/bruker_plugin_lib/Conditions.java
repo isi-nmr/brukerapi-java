@@ -333,6 +333,14 @@ public class Conditions {
 					p.NR, 
 					p.PVM_EncNReceivers};
 			permute_scheme = new int[] { 0,2,3,4,1 };
+		case SPECTROSCOPY:
+			encoding_space_shape = new int[] { 
+					p.ACQ_size.getInt(0)/2,
+					p.NR };
+			k_space_shape = new int[] {
+					p.ACQ_size.getInt(0)/2,
+					p.NR, };
+			permute_scheme = new int[] { 0, 1 };
 		default:
 			break;
 		}
@@ -371,6 +379,9 @@ public class Conditions {
 			 * setACQS_TYPE(ACQS_TYPE); }
 			 */
 		}
+		if (bruker.getParameters().ACQ_dim == 1) {
+			setACQS_TYPE(ACQ_TYPE.SPECTROSCOPY);
+			return;}
 		if (bruker.getParameters().ACQ_method.toUpperCase().contains("EPI") || 
 				bruker.getParameters().ACQ_method.toUpperCase().contains("EPSI")) {
 			setACQS_TYPE(ACQ_TYPE.EPI);
@@ -455,8 +466,13 @@ public class Conditions {
 				PVM_EncNReceivers = p.PVM_EncNReceivers;
 			}
 			
-			if(p.ACQ_dim_desc.get(0).contains("Spectroscopic"))
-				PVM_EncNReceivers = 1;
+			try {
+				if(p.ACQ_dim_desc.get(0).contains("Spectroscopic"))
+					PVM_EncNReceivers = 1;
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				
+			}
 			Integer single_acq = ACQ_size.getInt(0) * PVM_EncNReceivers;
 			if (GO_block_size == "Standard_KBlock_Format") {
 				block_size =  (int) ((Math.ceil(single_acq * itemsize  / 1024.) * 1024. / itemsize));

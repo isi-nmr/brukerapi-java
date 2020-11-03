@@ -18,19 +18,19 @@ public class Test {
 		
 		
 		
-		test_pv5_fid();
-		System.out.println("pv5 fid=======================finished");
-		test_pv5_2dseq();
-		System.out.println("pv5 2dseq=======================finished");
+//		test_pv5_fid();
+//		System.out.println("pv5 fid=======================finished");
+//		test_pv5_2dseq();
+//		System.out.println("pv5 2dseq=======================finished");
 		test_pv601_fid();
 		System.out.println("pv601 fid=======================finished");
-		test_pv601_2dseq();
-		System.out.println("pv601 2dseq=======================finished");
-		test_pv360_fid();
-		System.out.println("pv360 fid=======================finished");
-		test_pv360_2dseq();
-		System.out.println("pv360 2dseq=======================finished");
-		
+//		test_pv601_2dseq();
+//		System.out.println("pv601 2dseq=======================finished");
+//		test_pv360_fid();
+//		System.out.println("pv360 fid=======================finished");
+//		test_pv360_2dseq();
+//		System.out.println("pv360 2dseq=======================finished");
+//		
 		
 
 		
@@ -65,7 +65,7 @@ public class Test {
 		String json_pv6 = "test_config_pv601.json";
 		JSONParser jsonParser_pv6 = new JSONParser();
 		JSONObject jsonobject_pv6;
-		String[] acceptable_acq_type_pv6 = new String[] { "CART_2D", "CART_3D", "CSI", "EPI" };
+		String[] acceptable_acq_type_pv6 = new String[] { "CART_2D", "CART_3D", "CSI", "EPI", "SPECTROSCOPY" };
 		try (FileReader reader_pv6 = new FileReader(json_pv6)) {
 			try {
 				jsonobject_pv6 = (JSONObject) jsonParser_pv6.parse(reader_pv6);
@@ -77,7 +77,7 @@ public class Test {
 					Object type = it.next();
 					JSONObject rslt = (JSONObject) test_data_meta.get(type);
 
-				if (type.toString().contains("FID_")) {
+				if (type.toString().contains("FID_PRESS")) {
 
 					Object acq_scheme = null;
 					try {

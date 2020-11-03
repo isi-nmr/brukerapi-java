@@ -64,7 +64,8 @@ public class BrukerConvertor {
 //		  String ACQS_TYPE = (String) test_data_meta.get("acq_type"); 
 		  long startTime = System.nanoTime();
 		  Bruker bruker = new Bruker(); 
-		  bruker.setPath(Paths.get("D:\\DATA SETs\\for test Jbruker\\0.2H2\\0.2H2\\7\\fid")); 
+		  
+		  bruker.setPath(Paths.get("D:/DATA SETs/for test Jbruker/20200612_094625_lego_phantom_3_1_2/35/fid")); 
 		  bruker.isImage(); // bruker.setACQS_TYPE("CSI");
 		  DataBruker data = bruker.getData(); 
 		  long endTime = System.nanoTime();
