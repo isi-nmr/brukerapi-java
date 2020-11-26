@@ -20,7 +20,7 @@ public class DataBruker extends ArrayList<INDArray> {
 		this.bruker = bruker;
 		this.data = bruker.data;
 		this.real = data.get(0);
-		if (bruker.isRaw())
+		if (bruker.isRaw() || bruker.isIR())
 		this.imag = data.get(1);
 	}
 	

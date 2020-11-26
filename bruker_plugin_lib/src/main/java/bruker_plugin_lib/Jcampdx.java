@@ -26,6 +26,24 @@ public class Jcampdx {
 	private Path path_fid;
 	private Path path_2dseq;
 	private Bruker bruker;
+	
+	
+	
+	public Path getPath_fid() {
+		return path_fid;
+	}
+
+	public void setPath_fid(Path path_fid) {
+		this.path_fid = path_fid;
+	}
+
+	public Path getPath_2dseq() {
+		return path_2dseq;
+	}
+
+	public void setPath_2dseq(Path path_2dseq) {
+		this.path_2dseq = path_2dseq;
+	}
 
 	/**
 	 * get acqp file
@@ -121,7 +139,8 @@ public class Jcampdx {
 		Path pathL = bruker.getConditions().getPath();
 //		path_fid = path_2dseq.getParent().getParent();
 
-		if (pathL.getFileName().toString().contentEquals("2dseq")) {
+		if (pathL.getFileName().toString().contentEquals("2dseq") || 
+				pathL.getFileName().toString().contentEquals("1i") || pathL.getFileName().toString().contentEquals("1r")) {
 			try {
 				path_2dseq = pathL.getParent();
 				path_fid = path_2dseq.getParent().getParent();
@@ -399,8 +418,8 @@ public class Jcampdx {
 		return getMethod().getNucleus();
 	}
 
-	public double getSW(int i) {
-		return getAcqp().getSW(4000);
+	public double getSW(float defvalue) {
+		return getAcqp().getSW(defvalue);
 	}
 
 	public String[] getRecoQOPTS(String reco_qopts) {

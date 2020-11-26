@@ -135,7 +135,11 @@ public class Bruker {
 			data = read_fid();
 		}
 		if (!isRaw()) {
-			data = read_2dseq();
+			if (isIR()) {
+				data = read_ir();
+			} else {
+				data = read_2dseq();
+			}
 		}
 	}
 		return new DataBruker(this);
@@ -197,7 +201,15 @@ public class Bruker {
 		}
 		return rawFlag;
 	}
-
+	
+	public Boolean isIR() {
+		boolean irFlag = false;
+		if (!isRaw()) {
+				if (getConditions().getFiles().contains("1r") && getConditions().getFiles().contains("1i"))
+					irFlag = true;
+		}
+		return irFlag;
+	}
 	public void setData(ArrayList<INDArray> data) {
 		this.data = data;
 	}
@@ -239,7 +251,7 @@ public class Bruker {
 		} catch (IOException e) {
 			logger.error("There is a problem with reading the 2dseq file");
 		}
-		data_array = reshape_2dseq(ArrBD);
+		data_array = reshape_processed(ArrBD);
 		data_array = scale(data_array);
 		data_array = form_frame_groups(data_array);
 //		form_complex();
@@ -247,7 +259,42 @@ public class Bruker {
 		arraylist.add(data_array);
 		return arraylist ;
 	}
-
+	private ArrayList<INDArray> read_ir() {
+		Object ArrBD = new Object();
+		INDArray data_array = null;
+		ArrayList<INDArray> arraylist = new ArrayList<INDArray>();
+		String[] path2ir = new String[] {
+				jcampdx.getPath_2dseq() + File.separator + "1r",
+				jcampdx.getPath_2dseq() + File.separator + "1i"
+				};
+		for (String path : path2ir) {
+			try {
+				ArrBD = read_ir_file(path);
+			} catch (IOException e) {
+				logger.error("There is a problem with reading the 2dseq file");
+			}
+			data_array = reshape_processed(ArrBD);
+			data_array = scale(data_array);
+			data_array = form_frame_groups(data_array);
+//			form_complex();
+			
+			arraylist.add(data_array);
+		}
+		
+		return arraylist ;
+	}
+	
+	private Object read_ir_file(String path)
+			throws EOFException, IOException {
+		FileInputStream dataStream = new FileInputStream(path);
+		DataInputStream dataFilter = new DataInputStream(dataStream);
+		DataInputStream buffReader = new DataInputStream(new BufferedInputStream(dataFilter));
+		Object ArrBD = dtype(buffReader, parameters.VisuCoreWordType, parameters.VisuCoreByteOrder);
+		return ArrBD;
+	}
+	
+	
+	
 	/**
 	 * read 2dseq binary file
 	 *
@@ -268,7 +315,7 @@ public class Bruker {
 		return ArrBD;
 	}
 
-	private INDArray reshape_2dseq(Object ArrBD) {
+	private INDArray reshape_processed(Object ArrBD) {
 		// TODO Auto-generated method stub
 
 //		INDArray real = Nd4j.zeros(ArrBD.size());

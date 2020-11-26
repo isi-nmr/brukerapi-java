@@ -65,8 +65,8 @@ public class BrukerConvertor {
 		  long startTime = System.nanoTime();
 		  Bruker bruker = new Bruker(); 
 		  
-		  bruker.setPath(Paths.get("D:/DATA SETs/for test Jbruker/20200612_094625_lego_phantom_3_1_2/35/fid")); 
-		  bruker.isImage(); // bruker.setACQS_TYPE("CSI");
+		  bruker.setPath(Paths.get("D:\\test fid-a\\FID-A\\exampleData\\Bruker\\sample01_press\\press\\pdata\\1\\1r")); 
+//		  bruker.isImage(); // bruker.setACQS_TYPE("CSI");
 		  DataBruker data = bruker.getData(); 
 		  long endTime = System.nanoTime();
 		  System.out.println((endTime - startTime)/1000000);
@@ -75,7 +75,7 @@ public class BrukerConvertor {
 		  endTime = System.nanoTime();
 		  System.out.println((endTime - startTime)/1000000);
 		  startTime = System.nanoTime();
-		  Object realdata = data.getRealData();
+		  double[] realdata = data.getRealDataAsDouble();
 		  endTime = System.nanoTime();
 		  System.out.println((endTime - startTime)/1000000);
 		
