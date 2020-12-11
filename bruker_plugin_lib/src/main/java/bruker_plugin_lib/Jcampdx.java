@@ -1,4 +1,4 @@
-
+package bruker_plugin_lib;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -206,18 +206,6 @@ public class Jcampdx {
 		}
 	}
 
-	private static Object proc_single_list(String value_string) {
-		String[] sizes = value_string.split("\\)");
-		String size0 = sizes[0].replace("(", "").trim();
-		String[] S_size_list = size0.split(",");
-		INDArray array = Nd4j.zeros(S_size_list.length);
-		for (String element: S_size_list
-			 ) {
-			array.add(Double.valueOf(element));
-		}
-		return array;
-	}
-
 	public static Object proc_array(String value_string) {
 		String[] sizes = value_string.split("\\)");
 		String size0 = sizes[0].replace("(", "").trim();
@@ -281,12 +269,10 @@ public class Jcampdx {
 	}
 
 	public static Object proc_nested_list(String value_string) {
-		ArrayList values = new ArrayList<Object>();
 		String sizes = value_string.split("\\)")[0].replace("(", "").trim().replaceAll(" ", "");
 		String data_string = value_string.substring(value_string.indexOf(")") + 1).trim();
 		String[] S_size_list = sizes.split(",");
-		if (!data_string.isEmpty()) {
-			int[] I_size_list = new int[S_size_list.length];
+		int[] I_size_list = new int[S_size_list.length];
 		for (int i = 0; i < S_size_list.length; i++) {
 			try {
 				I_size_list[i] = Integer.valueOf(S_size_list[i]);
@@ -299,14 +285,14 @@ public class Jcampdx {
 			I_size_list[I_size_list.length] = 1;
 		}
 		data_string = data_string.replaceAll(" ", "");
-
+		List<Object> values = new ArrayList<Object>();
 		for (int i = 0; i < I_size_list[0]; i++) {
 			int position = data_string.indexOf(")(");
 			String data_frac = null;
 			if (!data_string.contentEquals("")) {
 				if (position > 0) {
 					data_frac = data_string.substring(1, position);
-				} else {
+				} else {			
 					data_frac = data_string.substring(1, data_string.length() - 1);
 				}
 				data_frac = data_frac.replaceAll(" ", "");
@@ -321,20 +307,6 @@ public class Jcampdx {
 				data_string = data_string.replaceFirst("\\s++$", "");
 			}
 		}
-	} else
-	{
-
-		for (String element: S_size_list
-		) {
-
-			try {
-				(values).add(Double.valueOf(element));
-			} catch (Exception e) {
-				(values).add(element);
-			}
-		}
-
-	}
 		return values;
 	}
 
@@ -344,19 +316,13 @@ public class Jcampdx {
 		} else if (value_string.startsWith("(") && !value_string.endsWith(")")) {
 			return proc_array(value_string);
 		} else if (value_string.startsWith("(") && value_string.endsWith(")")) {
-			if (value_string.endsWith(" )")) {
-				return proc_single_list(value_string);
-			} else {
-				return proc_nested_list(value_string);
-			}
+			return proc_nested_list(value_string);
 		} else {
-			System.out.println("parsing of a parameter was not done well ");
+			System.out.println("I returned value_string :(! :) ");
 		}
 		return value_string;
 
 	}
-
-
 
 	/**
 	 * read X jcmpdx file
@@ -394,6 +360,8 @@ public class Jcampdx {
 					String[] splited2 = s.split("=");
 					a = splited2[0];
 					b = splited2[1];
+//					if(a.contains("VisuFGOrderDesc"))
+//						System.out.println("found it");
 					aMap.put(a, proc_entry(b.replaceFirst("\\s++$", "")));
 				}
 			}

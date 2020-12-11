@@ -1,3 +1,4 @@
+package bruker_plugin_lib;
 
 public enum ACQ_TYPE {
 	CART_2D,
