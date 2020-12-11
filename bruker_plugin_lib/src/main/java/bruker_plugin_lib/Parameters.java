@@ -1,4 +1,4 @@
-package bruker_plugin_lib;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
