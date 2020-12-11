@@ -1,17 +1,16 @@
 package bruker_plugin_lib;
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
-
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 public class Test {
 	public static void main(String[] args) throws IOException {
@@ -22,12 +21,12 @@ public class Test {
 //		System.out.println("pv5 fid=======================finished");
 //		test_pv5_2dseq();
 //		System.out.println("pv5 2dseq=======================finished");
-		test_pv601_fid();
-		System.out.println("pv601 fid=======================finished");
+//		test_pv601_fid();
+//		System.out.println("pv601 fid=======================finished");
 //		test_pv601_2dseq();
 //		System.out.println("pv601 2dseq=======================finished");
-//		test_pv360_fid();
-//		System.out.println("pv360 fid=======================finished");
+		test_pv360_fid();
+		System.out.println("pv360 fid=======================finished");
 //		test_pv360_2dseq();
 //		System.out.println("pv360 2dseq=======================finished");
 //		
@@ -41,7 +40,7 @@ public class Test {
 
 	private static void test_pv360_2dseq() {
 		// TODO Auto-generated method stub
-		  Bruker bruker_pv360 = new Bruker(); 
+		  Bruker bruker_pv360 = new Bruker();
 		  String pathTemp_pv360 = "D:\\DATA SETs\\from jana\\Cristina\\20200310_093147_rat_10032020_2_rat_10032020_testFIDCSI_1_1_Jana\\27\\pdata\\1\\2dseq";
 		  bruker_pv360.setPath(Paths.get(pathTemp_pv360)); 
 		  DataBruker data_pv360 = bruker_pv360.getData();
@@ -51,12 +50,22 @@ public class Test {
 
 	private static void test_pv360_fid() {
 		// TODO Auto-generated method stub
-		  Bruker bruker_pv360 = new Bruker(); 
-		  String pathTemp_pv360 = "D:\\DATA SETs\\from jana\\Cristina\\20200310_093147_rat_10032020_2_rat_10032020_testFIDCSI_1_1_Jana\\27\\fid";
-		  bruker_pv360.setPath(Paths.get(pathTemp_pv360)); 
-		  DataBruker data_pv360 = bruker_pv360.getData();
-		  float[] realdata = data_pv360.getRealData();
-		  Object imagedata = data_pv360.getImagData();
+		  Bruker bruker_pv360 = new Bruker();
+		  // "D:\\DATA SETs\\from jana\\Cristina\\20200310_093147_rat_10032020_2_rat_10032020_testFIDCSI_1_1_Jana\\27\\fid",
+		  String[] paths = new String[] {
+
+				"D:\\DATA SETs\\from jana\\Paravison360\\Phantom__perfect__06052020_1_Jana\\15_metabolites\\fid"
+		  };
+		for (String path: paths
+			 ) {
+			bruker_pv360.setPath(Paths.get(path));
+			DataBruker data_pv360 = bruker_pv360.getData();
+			System.out.println(bruker_pv360.getJcampdx().getAcqp().getArrayList("ACQ_abs_time"));
+//			float[] realdata = data_pv360.getRealData();
+//			Object imagedata = data_pv360.getImagData();
+		}
+
+
 	}
 
 	private static void test_pv601_fid() throws IOException {
