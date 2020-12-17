@@ -272,11 +272,12 @@ public class Jcampdx {
 				return value_float;
 			}
 		} else {
-			if (I_size_list[0] > 1) {
+//			if (I_size_list[0] > 1) {
 				return value_str;
-			} else {
-				return value_str.get(0);
-			}
+//			} 
+//			else {
+//				return value_str.get(0);
+//			}
 		}
 
 	}
@@ -395,6 +396,9 @@ public class Jcampdx {
 					String[] splited2 = s.split("=");
 					a = splited2[0];
 					b = splited2[1];
+//					if(a.contentEquals("ACQ_dim_desc")) {
+//						System.out.println("stop here");
+//						}
 					aMap.put(a, proc_entry(b.replaceFirst("\\s++$", "")));
 				}
 			}

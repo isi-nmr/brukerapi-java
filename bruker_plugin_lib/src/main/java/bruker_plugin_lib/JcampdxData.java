@@ -33,6 +33,8 @@ public class JcampdxData {
 		try {
 			param = (String) parameters.get(TAG);
 		} catch (Exception e) {
+			ArrayList<Object> arrparam =  (ArrayList<Object>) parameters.get(TAG);
+			param = (String) arrparam.get(0);
 			logger.error("the {} file is missing", TAG);
 		}
 		return param;

@@ -60,6 +60,7 @@ public class Parameters {
 			getFidParams();
 		} else if (!bruker.isRaw()) {
 			get2dseqParams();
+			getFidParams();
 		}
 	}
 

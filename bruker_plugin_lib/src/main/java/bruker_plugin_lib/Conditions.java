@@ -39,7 +39,13 @@ public class Conditions {
 	long[] reshape_scheme_2dseq;
 	
 	public int getBinarySize() {
-		binarySize = product(storage);
+		Parameters p = bruker.getParameters();
+		if(p.ACQ_dim_desc.stream().anyMatch("Spectroscopic" :: contains)) {
+			binarySize = product(storage);
+		} else {
+			binarySize = product(storage);
+		}
+			
 		return binarySize;
 	}
 
@@ -213,6 +219,9 @@ public class Conditions {
 				break;
 			}
 		case SPECTROSCOPY:
+			if(p.PVM_EncNReceivers != 1) {
+				p.NR = p.PVM_EncNReceivers;
+			} 
 			block_count = p.NR;
 			break;
 		case EPI:
@@ -466,7 +475,7 @@ public class Conditions {
 			}
 			
 			try {
-				if(p.ACQ_dim_desc.get(0).contains("Spectroscopic"))
+				if(p.ACQ_dim_desc.get(0).contains("Spectroscopic") )
 					PVM_EncNReceivers = 1;
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
