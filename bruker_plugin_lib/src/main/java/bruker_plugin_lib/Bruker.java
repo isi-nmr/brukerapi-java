@@ -155,7 +155,7 @@ public class Bruker {
 				realshape = data.get(0).shape();
 				if (imagShape != realshape)
 					logger.error("mismatch shapes {} = {}", imagShape, realshape);
-			} else if (!isRaw()) {
+			    } else if (!isRaw()) {
 				long[] dims = data.get(0).shape();
 				if (dims.length == 5) {
 					realshape = data.get(0).get(NDArrayIndex.all(), NDArrayIndex.all(), NDArrayIndex.all(),

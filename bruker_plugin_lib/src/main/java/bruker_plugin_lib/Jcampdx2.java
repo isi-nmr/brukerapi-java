@@ -1,8 +1,7 @@
 package bruker_plugin_lib;
 
 
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +15,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Jcampdx {
+public class Jcampdx2 {
 	private JcampdxData acqp;
 	private JcampdxData method;
 	private JcampdxData reco;
@@ -28,6 +27,16 @@ public class Jcampdx {
 	private Path path_2dseq;
 	private Bruker bruker;
 	
+	public static void main(String[] args) {
+		  long startTime = System.nanoTime();
+		  read_jcampdx_file("D:\\DATA SETs\\mayo+milk\\20210226_134441_majoneza_majoneza_1_1 - Copy\\EPSI(E12)\\acqp");
+		  long endTime = System.nanoTime();
+		  System.out.println((endTime - startTime)/1000000);
+		  startTime = System.nanoTime();
+		  Jcampdx.read_jcampdx_file("D:\\DATA SETs\\mayo+milk\\20210226_134441_majoneza_majoneza_1_1 - Copy\\EPSI(E12)\\acqp");
+		  endTime = System.nanoTime();
+		  System.out.println((endTime - startTime)/1000000);
+	}
 	
 	
 	public Path getPath_fid() {
@@ -135,7 +144,7 @@ public class Jcampdx {
 	 *
 	 * @param bruker : path to the main directory
 	 */
-	public Jcampdx(Bruker bruker) {
+	public Jcampdx2(Bruker bruker) {
 		this.bruker = bruker;
 		Path pathL = bruker.getConditions().getPath();
 //		path_fid = path_2dseq.getParent().getParent();
@@ -211,7 +220,7 @@ public class Jcampdx {
 		String[] sizes = value_string.split("\\)");
 		String size0 = sizes[0].replace("(", "").trim();
 		String[] S_size_list = size0.split(",");
-		INDArray array = Nd4j.zeros(S_size_list.length);
+		ArrayList<Double> array = new ArrayList<Double>();
 		for (String element: S_size_list
 			 ) {
 			array.add(Double.valueOf(element));
@@ -240,7 +249,7 @@ public class Jcampdx {
 			data_List = data_string.split(" ");
 		}
 		String format_;
-		INDArray value_float = null;
+		float[] value_float = null;
 		List<String> value_str = new ArrayList<String>();
 		try {
 			Float.parseFloat(data_List[0]);
@@ -249,14 +258,14 @@ public class Jcampdx {
 			for (int idx_size = 0; idx_size < I_size_list.length; idx_size++) {
 				rslt = I_size_list[idx_size] * rslt;
 			}
-			value_float = Nd4j.zeros(1, rslt);
+			value_float = new float[(int) rslt];
 		} catch (Exception e) {
 			format_ = "String";
 		}
 		for (int i = 0; i < data_List.length; i++) {
 			if (format_ == "float") {
 				try {
-					value_float.putScalar(i, Float.valueOf(data_List[i]));
+					value_float[i] =  Float.valueOf(data_List[i]);
 				} catch (NumberFormatException e) {
 					System.out.println("unexpected format");
 				}
@@ -265,9 +274,9 @@ public class Jcampdx {
 			}
 		}
 		if (format_ == "float") {
-			if (data_List.length > 1) {
-				value_float = value_float.reshape(I_size_list);
-				return value_float;
+			if (data_List.length > 1 ) {
+				Object mat_float = reshape(I_size_list, value_float);
+				return mat_float;
 			} else {
 				return value_float;
 			}
@@ -281,6 +290,33 @@ public class Jcampdx {
 		}
 
 	}
+
+	private static Object reshape(int[] i_size_list, float[] value_float) {
+		// TODO Auto-generated method stub
+		if (i_size_list.length == 2) {
+			float[][] mat = new float[i_size_list[0]][i_size_list[1]];
+			for (int i = 0; i < i_size_list[0]; i++) {
+				for (int j = 0; j < i_size_list[1]; j++) {
+					mat[i][j] = value_float[i*i_size_list[1]+j];
+				}
+			}
+			return mat;
+		}
+		if (i_size_list.length == 3) {
+			float[][][] mat = new float[i_size_list[0]][i_size_list[1]][i_size_list[2]];
+			for (int i = 0; i < i_size_list[0]; i++) {
+				for (int j = 0; j < i_size_list[1]; j++) {
+					for (int k = 0; k < i_size_list[2]; k++) {
+						mat[i][j][k] = value_float[i*j*i_size_list[1]*i_size_list[2]+j*i_size_list[2]+k];
+				}
+			}
+			return mat;
+		}
+	}
+		return value_float;
+		
+	}
+
 
 	public static Object proc_nested_list(String value_string) {
 		ArrayList values = new ArrayList<Object>();
@@ -416,24 +452,24 @@ public class Jcampdx {
 		return aMap;
 	}
 
-	public float[] getFov(float[] fov) {
-		float[] FOV = null;
-		String[] dic = { "PVM_FovCm", "RECO_fov", "ACQ_fov" };
-		FOV = getMethod().getINDArray(dic[0]).data().asFloat();
-		if (bruker.isRaw()) {
-			FOV = getAcqp().getINDArray(dic[2]).data().asFloat();
-		} else if (!bruker.isRaw()) {
-			FOV = getReco().getINDArray(dic[1]).data().asFloat();
-		}
-		if (FOV == null) {
-			FOV = fov;
-			logger.error("Problem to load FOV. Default value used: {}", fov);
-		}
-		// why???
-		for (int i = 0; i < FOV.length; i++)
-			FOV[i] *= 10;
-		return FOV;
-	}
+//	public float[] getFov(float[] fov) {
+//		float[] FOV = null;
+//		String[] dic = { "PVM_FovCm", "RECO_fov", "ACQ_fov" };
+//		FOV = getMethod().getINDArray(dic[0]).data().asFloat();
+//		if (bruker.isRaw()) {
+//			FOV = getAcqp().getINDArray(dic[2]).data().asFloat();
+//		} else if (!bruker.isRaw()) {
+//			FOV = getReco().getINDArray(dic[1]).data().asFloat();
+//		}
+//		if (FOV == null) {
+//			FOV = fov;
+//			logger.error("Problem to load FOV. Default value used: {}", fov);
+//		}
+//		// why???
+//		for (int i = 0; i < FOV.length; i++)
+//			FOV[i] *= 10;
+//		return FOV;
+//	}
 
 	public float[][] getGradMatrix(int dim, float[][] gradMatrix) {
 		return getAcqp().getGradMatrix(dim, gradMatrix);

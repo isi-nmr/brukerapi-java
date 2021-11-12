@@ -17,18 +17,18 @@ public class Test {
 		
 		
 		
-//		test_pv5_fid();
-//		System.out.println("pv5 fid=======================finished");
+		test_pv5_fid();
+		System.out.println("pv5 fid=======================finished");
 //		test_pv5_2dseq();
 //		System.out.println("pv5 2dseq=======================finished");
 //		test_pv601_fid();
 //		System.out.println("pv601 fid=======================finished");
 //		test_pv601_2dseq();
 //		System.out.println("pv601 2dseq=======================finished");
-		test_pv360_fid();
-		System.out.println("pv360 fid=======================finished");
-//		test_pv360_2dseq();
-//		System.out.println("pv360 2dseq=======================finished");
+//		test_pv360_fid();
+//		System.out.println("pv360 fid=======================finished");
+		test_pv360_2dseq();
+		System.out.println("pv360 2dseq=======================finished");
 //		
 		
 

@@ -175,11 +175,22 @@ public class Parameters {
 			if(PV_version == null) {
 				if(bruker.getJcampdx().getAcqp().getString("ACQ_sw_version").contains("PV-360"))
 					PV_version = "360";
+				if(bruker.getJcampdx().getAcqp().getString("ACQ_sw_version").contains("PV5.1"))
+					PV_version = "5.1";
+				if(bruker.getJcampdx().getAcqp().getString("ACQ_sw_version").contains("PV6.0.1"))
+					PV_version = "6.0.1";
+				if(bruker.getJcampdx().getAcqp().getString("ACQ_sw_version").contains("PV6.0"))
+					PV_version = "6.0";
 			}
-			if (Arrays.stream(PV_VERSIONS).anyMatch(PV_version::equals)) {
-				logger.info("File {} is a supported PV version", PV_version);
-			} else {
-				logger.error("File {} is not a supported PV version", PV_version);
+			try {
+				if (Arrays.stream(PV_VERSIONS).anyMatch(PV_version::equals)) {
+					logger.info("File {} is a supported PV version", PV_version);
+				} else {
+					logger.error("File {} is not a supported PV version", PV_version);
+				}
+			} catch (Exception e) {
+					logger.error("PV version cannot be recognized, I will set to {} ", "default");
+					PV_version = "default";
 			}		
 	} 
 	

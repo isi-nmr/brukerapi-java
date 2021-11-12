@@ -35,20 +35,20 @@ public class BrukerConvertor {
 
 	public static void main(String[] args) throws EOFException, IOException {
 		Logger logger = LoggerFactory.getLogger(BrukerConvertor.class);
-		String fs_prefix = "D:\\DATA SETs\\";
-		String json = "fid_schemes.json";
-		JSONParser jsonParser = new JSONParser();
-		try (FileReader reader = new FileReader(json)) {
-			try {
-				JSONObject jsonobject = (JSONObject) jsonParser.parse(reader);
-//			test_data_meta = (JSONObject) jsonobject.get(dataset_id);			
-			} catch (ParseException e) {
-				e.printStackTrace();
-			}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-		
+//		String fs_prefix = "D:\\DATA SETs\\";
+//		String json = "fid_schemes.json";
+//		JSONParser jsonParser = new JSONParser();
+//		try (FileReader reader = new FileReader(json)) {
+//			try {
+//				JSONObject jsonobject = (JSONObject) jsonParser.parse(reader);
+////			test_data_meta = (JSONObject) jsonobject.get(dataset_id);			
+//			} catch (ParseException e) {
+//				e.printStackTrace();
+//			}
+//		} catch (FileNotFoundException e) {
+//			e.printStackTrace();
+//		}
+//		
 		
 
 		
@@ -65,7 +65,7 @@ public class BrukerConvertor {
 		  long startTime = System.nanoTime();
 		  Bruker bruker = new Bruker(); 
 		  
-		  bruker.setPath(Paths.get("D:\\test fid-a\\FID-A\\exampleData\\Bruker\\sample01_press\\press\\pdata\\1\\1r")); 
+		  bruker.setPath(Paths.get("D:\\DATA SETs\\Barcelona\\Barcelona\\18\\fid")); 
 //		  bruker.isImage(); // bruker.setACQS_TYPE("CSI");
 		  DataBruker data = bruker.getData(); 
 		  long endTime = System.nanoTime();

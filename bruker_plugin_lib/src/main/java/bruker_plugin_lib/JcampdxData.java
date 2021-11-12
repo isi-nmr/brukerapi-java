@@ -13,7 +13,7 @@ import java.util.Map;
 public class JcampdxData {
 	private Map<String, Object> parameters;
 	private Logger logger = LoggerFactory.getLogger(JcampdxData.class);
-
+	
 	/**
 	 * constructor of JcampdxData Object
 	 * @param parameters map of parameters : acqp, method,...
@@ -22,6 +22,20 @@ public class JcampdxData {
 		super();
 		this.parameters = parameters;
 	}
+	
+	
+	
+	public Map<String, Object> getParameters() {
+		return parameters;
+	}
+
+
+
+	public void setParameters(Map<String, Object> parameters) {
+		this.parameters = parameters;
+	}
+
+
 
 	/**
 	 * get string type parameter
