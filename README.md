@@ -5,7 +5,7 @@
 >download library from maven:https://search.maven.org/remotecontent?filepath=com/github/isi-nmr/JBruker/1.0.0/JBruker-1.0.0.jar  
 >javadoc : https://javadoc.io/doc/com.github.isi-nmr/JBruker/1.0.1  
 
-(c) Ústav přístrojové techniky AV ČR, v. v. i., 2020
+(c) 2020 Ústav přístrojové techniky AV ČR, v. v. i. 
 
 Bruker API is a multi-language package for providing input and output interface for Bruker data sets. The API is available in Python, JAVA, and Matlab. The JAVA version, so-called JBruker, is an open-source library for handling datasets.  
 The purposes of developing the JAVA version are illuminated as follows: First, the main purpose is not using the library as a standalone software but rather to use as a third-party library in other well-developed standalone MRI and NMR(MRS) data processing software. Second, the power of Java cross-platform programming enables the API to run on most or all systems.  
